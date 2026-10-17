@@ -1,3 +1,6 @@
 <Solution>
-  <Project Path="DeliveryPlatform.API/DeliveryPlatform.API.csproj" />
+  <Project Path="D:/all desktop/DeliveryPlatform/DeliveryPlatform.Backend/DeliveryPlatform.API/DeliveryPlatform.API.csproj" />
+  <Project Path="D:/all desktop/DeliveryPlatform/DeliveryPlatform.Backend/DeliveryPlatform.Application/DeliveryPlatform.Application.csproj" />
+  <Project Path="D:/all desktop/DeliveryPlatform/DeliveryPlatform.Backend/DeliveryPlatform.Domain/DeliveryPlatform.Domain.csproj" />
+  <Project Path="D:/all desktop/DeliveryPlatform/DeliveryPlatform.Backend/DeliveryPlatform.Infrastructure/DeliveryPlatform.Infrastructure.csproj" />
 </Solution>

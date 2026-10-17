@@ -17,4 +17,7 @@ public class Branch
     public bool IsActive { get; set; } = true;
 
     public Business Business { get; set; } = null!;
+
+    public ICollection<Inventory> Inventories { get; set; }
+    = new List<Inventory>();
 }

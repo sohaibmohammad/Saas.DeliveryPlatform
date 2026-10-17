@@ -1,4 +1,4 @@
-﻿namespace DeliveryPlatform.Domain.Entity;
+﻿namespace DeliveryPlatform.Domain.src.Entity;
 
 public class Category
 {

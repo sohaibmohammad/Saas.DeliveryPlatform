@@ -19,12 +19,17 @@ public class InventoryConfiguration : IEntityTypeConfiguration<Inventory>
         builder.Property(x => x.UpdatedAt)
             .IsRequired();
 
-        builder.HasIndex(x => x.ProductId)
-            .IsUnique();
+        builder.HasIndex(x => new { x.BranchId, x.ProductId })
+    .IsUnique();
+
+        builder.HasOne(x => x.Branch)
+       .WithMany(x => x.Inventories)
+       .HasForeignKey(x => x.BranchId)
+       .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasOne(x => x.Product)
-            .WithOne(x => x.Inventory)
-            .HasForeignKey<Inventory>(x => x.ProductId)
+            .WithMany(x => x.Inventories)
+                .HasForeignKey(x => x.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

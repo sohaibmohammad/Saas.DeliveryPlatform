@@ -1,4 +1,4 @@
-﻿namespace DeliveryPlatform.Domain.Entity;
+﻿namespace DeliveryPlatform.Domain.src.Entity;
 
 public class Product
 {
@@ -25,5 +25,6 @@ public class Product
 
     public Category Category { get; set; } = null!;
 
-    public Inventory? Inventory { get; set; }
+    public ICollection<Inventory> Inventories { get; set; }
+        = new List<Inventory>();
 }

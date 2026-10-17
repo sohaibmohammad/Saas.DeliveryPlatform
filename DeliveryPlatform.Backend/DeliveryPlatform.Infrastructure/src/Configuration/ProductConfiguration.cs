@@ -49,9 +49,9 @@ public class ProductConfiguration : IEntityTypeConfiguration<Product>
     })
     .OnDelete(DeleteBehavior.Restrict);
 
-        builder.HasOne(x => x.Inventory)
+        builder.HasMany(x => x.Inventories)
             .WithOne(x => x.Product)
-            .HasForeignKey<Inventory>(x => x.ProductId)
+            .HasForeignKey(x => x.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

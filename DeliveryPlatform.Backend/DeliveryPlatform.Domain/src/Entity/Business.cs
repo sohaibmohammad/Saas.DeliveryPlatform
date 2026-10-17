@@ -1,4 +1,4 @@
-﻿namespace DeliveryPlatform.Domain.Entity;
+﻿namespace DeliveryPlatform.Domain.src.Entity;
 
 public class Business
 {
@@ -18,6 +18,8 @@ public class Business
 
     // Navigation
     public User Owner { get; set; } = null!;
+
+    public ICollection<Branch> Branches { get; set; } = new List<Branch>();
 
     public ICollection<Category> Categories { get; set; } = new List<Category>();
 

@@ -26,9 +26,9 @@ public class BusinessConfiguration : IEntityTypeConfiguration<Business>
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
-        builder.HasOne(x => x.Owner)
+        builder.HasOne(x => x.User)
             .WithMany(x => x.Businesses)
-            .HasForeignKey(x => x.OwnerId)
+            .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasMany(x => x.Branches)

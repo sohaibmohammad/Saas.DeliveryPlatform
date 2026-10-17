@@ -17,18 +17,21 @@ public class CategoryConfiguration : IEntityTypeConfiguration<Category>
         builder.HasIndex(x => new
         {
             x.BusinessId,
-            x.Name
+            x.Id
         })
         .IsUnique();
+
+        builder.HasAlternateKey(x => new
+        {
+            x.BusinessId,
+            x.Name
+        });
 
         builder.HasOne(x => x.Business)
             .WithMany(x => x.Categories)
             .HasForeignKey(x => x.BusinessId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        builder.HasMany(x => x.Products)
-            .WithOne(x => x.Category)
-            .HasForeignKey(x => x.CategoryId)
-            .OnDelete(DeleteBehavior.Restrict);
+     
     }
 }
