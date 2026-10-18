@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DeliveryPlatform.Application\DeliveryPlatform.Application.csproj" />
     <ProjectReference Include="..\DeliveryPlatform.Domain\DeliveryPlatform.Domain.csproj" />
   </ItemGroup>
 

@@ -4,7 +4,7 @@ public class Business
 {
     public Guid Id { get; set; }
 
-    public Guid OwnerId { get; set; }
+    public Guid UserId { get; set; }
 
     public string Name { get; set; } = null!;
 
@@ -17,7 +17,7 @@ public class Business
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     // Navigation
-    public User Owner { get; set; } = null!;
+    public User User { get; set; } = null!;
 
     public ICollection<Branch> Branches { get; set; } = new List<Branch>();
 

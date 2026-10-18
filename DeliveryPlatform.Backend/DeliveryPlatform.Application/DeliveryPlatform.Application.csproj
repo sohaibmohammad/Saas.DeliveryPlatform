@@ -8,6 +8,11 @@
 
   <ItemGroup>
     <PackageReference Include="MediatR" Version="14.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="10.0.13" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DeliveryPlatform.Domain\DeliveryPlatform.Domain.csproj" />
   </ItemGroup>
 
 </Project>

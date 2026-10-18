@@ -34,8 +34,8 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
             .IsUnique();
 
         builder.HasMany(x => x.Businesses)
-            .WithOne(x => x.Owner)
-            .HasForeignKey(x => x.OwnerId)
+            .WithOne(x => x.User)
+            .HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
