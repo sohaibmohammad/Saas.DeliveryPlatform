@@ -26,11 +26,20 @@ public class RegisterUserHandler : IRequestHandler<RegisterUserCommand, Guid>
 
     public async Task<Guid> Handle(RegisterUserCommand request, CancellationToken cancellationToken)
     {
+        var email = request.Email.Trim().ToLowerInvariant();
+        if (await _userRepository.EmailExistsAsync(
+    email,
+    cancellationToken))
+        {
+            throw new InvalidOperationException(
+                "Email is already registered.");
+        }
+
         var user = new User
         {
             Id = Guid.NewGuid(),
             Name = request.Name,
-            Email = request.Email,
+            Email = email,
             Role = UserRole.Customer
         };
 

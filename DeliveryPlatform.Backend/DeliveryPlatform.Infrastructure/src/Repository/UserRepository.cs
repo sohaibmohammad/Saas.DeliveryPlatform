@@ -21,4 +21,14 @@ public class UserRepository : GenericRepository<User>,IUserRepository
         return await _context.Users
             .AnyAsync(u => u.Email == email, cancellationToken);
     }
+
+    public async Task<User?> GetByEmailAsync(
+    string email,
+    CancellationToken cancellationToken)
+    {
+        return await _context.Users
+            .FirstOrDefaultAsync(
+                user => user.Email == email,
+                cancellationToken);
+    }
 }

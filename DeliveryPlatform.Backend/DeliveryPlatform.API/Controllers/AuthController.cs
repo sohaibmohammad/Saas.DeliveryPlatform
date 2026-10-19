@@ -1,4 +1,5 @@
-﻿using DeliveryPlatform.Application.src.Features.Auth.Register;
+﻿using DeliveryPlatform.Application.src.Features.Auth.Login;
+using DeliveryPlatform.Application.src.Features.Auth.Register;
 using MediatR;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
@@ -21,6 +22,18 @@ namespace DeliveryPlatform.API.Controllers
             var userId = await _mediator.Send(command, cancellationToken);
             return StatusCode(StatusCodes.Status201Created, new { id = userId });
         }
+
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login(
+            LoginUserCommand command,
+            CancellationToken cancellationToken)
+        {
+            var userId = await _mediator.Send(command, cancellationToken);
+
+            return Ok(new { Id = userId });
+        }
+
 
     }
 }
