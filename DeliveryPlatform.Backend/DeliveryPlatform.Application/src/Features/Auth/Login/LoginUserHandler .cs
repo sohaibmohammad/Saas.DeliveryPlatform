@@ -1,25 +1,28 @@
 ﻿using DeliveryPlatform.Application.src.Abstractions.Repositoty;
 using DeliveryPlatform.Application.src.Abstractions.Security;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Text;
+ 
 
 namespace DeliveryPlatform.Application.src.Features.Auth.Login;
 
-public class LoginUserHandler : IRequestHandler<LoginUserCommand, Guid>
+public class LoginUserHandler : IRequestHandler<LoginUserCommand, string>
 {
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHashService _passwordHashService;
 
+    private readonly IJwtTokenService _jwtTokenService;
+
+
     public LoginUserHandler(
         IUserRepository userRepository,
-        IPasswordHashService passwordHashService)
+        IPasswordHashService passwordHashService, IJwtTokenService jwtTokenService)
     {
         _userRepository = userRepository;
         _passwordHashService = passwordHashService;
+        _jwtTokenService = jwtTokenService;
+
     }
-    public async Task<Guid> Handle(LoginUserCommand request, CancellationToken cancellationToken)
+    public async Task<string> Handle(LoginUserCommand request, CancellationToken cancellationToken)
     {
         var email = request.Email.Trim().ToLowerInvariant();
 
@@ -44,7 +47,8 @@ public class LoginUserHandler : IRequestHandler<LoginUserCommand, Guid>
                 "Invalid email or password.");
         }
 
-        return user.Id;
+        return _jwtTokenService.GenerateToken(user);
     }
 
+   
 }
