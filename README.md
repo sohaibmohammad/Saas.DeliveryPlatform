@@ -17,3 +17,4 @@ A delivery platform backend built with ASP.NET Core and .NET 10.
 - Entity Framework Core
 - SQL Server
 - MediatR
+- CQRS
