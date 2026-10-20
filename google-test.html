@@ -1,0 +1,41 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Google Registration Test</title>
+    <script src="https://accounts.google.com/gsi/client" async></script>
+</head>
+<body>
+    <h2>Test Google Registration</h2>
+
+    <div id="buttonDiv"></div>
+    <p id="status"></p>
+
+    <textarea id="token" rows="8" cols="80"
+        placeholder="Your Google ID Token will appear here"
+        readonly></textarea>
+
+    <script>
+        window.onload = function () {
+            google.accounts.id.initialize({
+                client_id: "297785822426-2vulots1o599foaoc6oots79pic9835o.apps.googleusercontent.com",
+                callback: handleCredentialResponse
+            });
+
+            google.accounts.id.renderButton(
+                document.getElementById("buttonDiv"),
+                { theme: "outline", size: "large" }
+            );
+        };
+
+        function handleCredentialResponse(response) {
+            document.getElementById("token").value =
+                response.credential;
+
+            document.getElementById("status").textContent =
+                "Google ID Token received successfully!";
+        }
+    </script>
+</body>
+</html>
