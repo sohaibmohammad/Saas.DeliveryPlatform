@@ -30,7 +30,7 @@ public class LoginUserHandler : IRequestHandler<LoginUserCommand, string>
             email,
             cancellationToken);
 
-        if (user is null)
+        if (user is null||user.PasswordHash is null)
         {
             throw new UnauthorizedAccessException(
                 "Invalid email or password.");

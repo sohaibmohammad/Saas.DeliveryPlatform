@@ -3,4 +3,5 @@
   <Project Path="D:/all desktop/DeliveryPlatform/DeliveryPlatform.Backend/DeliveryPlatform.Application/DeliveryPlatform.Application.csproj" />
   <Project Path="D:/all desktop/DeliveryPlatform/DeliveryPlatform.Backend/DeliveryPlatform.Domain/DeliveryPlatform.Domain.csproj" />
   <Project Path="D:/all desktop/DeliveryPlatform/DeliveryPlatform.Backend/DeliveryPlatform.Infrastructure/DeliveryPlatform.Infrastructure.csproj" />
+  <Project Path="DeliveryPlatform.Test/DeliveryPlatform.Test.csproj" Id="ddbd9b40-72a4-4844-97e6-e59b29f6fcae" />
 </Solution>

@@ -1,4 +1,5 @@
-﻿using DeliveryPlatform.Application.src.Features.Auth.Login;
+﻿using DeliveryPlatform.Application.src.Features.Auth.GoogleRegister;
+using DeliveryPlatform.Application.src.Features.Auth.Login;
 using DeliveryPlatform.Application.src.Features.Auth.Register;
 using MediatR;
 using Microsoft.AspNetCore.Identity.Data;
@@ -29,11 +30,19 @@ namespace DeliveryPlatform.API.Controllers
             LoginUserCommand command,
             CancellationToken cancellationToken)
         {
-            var userId = await _mediator.Send(command, cancellationToken);
+            var token = await _mediator.Send(command, cancellationToken);
 
-            return Ok(new { Id = userId });
+            return Ok(new { AccessToken=token ,TokenType="Bearer" });
         }
 
+        [HttpPost("google/register")]
+        public async Task<IActionResult> RegisterWithGoogle(
+       [FromBody] RegisterWithGoogleCommand command,
+       CancellationToken cancellationToken)
+        {
+            var token = await _mediator.Send(command, cancellationToken);
 
+            return Ok(new { token });
+        }
     }
 }

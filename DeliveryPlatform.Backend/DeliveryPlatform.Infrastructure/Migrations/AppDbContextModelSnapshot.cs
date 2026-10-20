@@ -81,12 +81,12 @@ namespace DeliveryPlatform.Infrastructure.Migrations
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
 
-                    b.Property<Guid>("OwnerId")
+                    b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("OwnerId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Businesses");
                 });
@@ -113,6 +113,38 @@ namespace DeliveryPlatform.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.ExternalLogins", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("ProviderUserId")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("Provider", "ProviderUserId")
+                        .IsUnique();
+
+                    b.ToTable("ExternalLogins");
                 });
 
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Inventory", b =>
@@ -207,7 +239,6 @@ namespace DeliveryPlatform.Infrastructure.Migrations
                         .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("PasswordHash")
-                        .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Role")
@@ -234,13 +265,13 @@ namespace DeliveryPlatform.Infrastructure.Migrations
 
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Business", b =>
                 {
-                    b.HasOne("DeliveryPlatform.Domain.src.Entity.User", "Owner")
+                    b.HasOne("DeliveryPlatform.Domain.src.Entity.User", "User")
                         .WithMany("Businesses")
-                        .HasForeignKey("OwnerId")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.Navigation("Owner");
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Category", b =>
@@ -252,6 +283,17 @@ namespace DeliveryPlatform.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Business");
+                });
+
+            modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.ExternalLogins", b =>
+                {
+                    b.HasOne("DeliveryPlatform.Domain.src.Entity.User", "User")
+                        .WithMany("ExternalLogins")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Inventory", b =>
@@ -320,6 +362,8 @@ namespace DeliveryPlatform.Infrastructure.Migrations
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.User", b =>
                 {
                     b.Navigation("Businesses");
+
+                    b.Navigation("ExternalLogins");
                 });
 #pragma warning restore 612, 618
         }

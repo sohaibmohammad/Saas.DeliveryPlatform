@@ -83,7 +83,18 @@ builder.Services
         };
     });
 
+builder.Services
+    .AddOptions<GoogleAuthOptions>()
+    .Bind(builder.Configuration.GetSection(
+        GoogleAuthOptions.SectionName))
+    .Validate(
+        options => !string.IsNullOrWhiteSpace(options.ClientId),
+        "Google ClientId is required.")
+    .ValidateOnStart();
 
+
+builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
+builder.Services.AddScoped<IExternalLoginRepository,ExternalLoginRepository>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
@@ -105,7 +116,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ExceptionHandlingMiddlware>();
 app.UseHttpsRedirection();
-
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
