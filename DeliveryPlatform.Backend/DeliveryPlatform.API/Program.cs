@@ -92,7 +92,8 @@ builder.Services
         "Google ClientId is required.")
     .ValidateOnStart();
 
-
+builder.Services.AddScoped<IRefreshTokenService,RefreshTokenService>();
+builder.Services.AddScoped<IUserRefreshTokenReposiory, UserRefreshTokenRepository>();
 builder.Services.AddScoped<IGoogleAuthService, GoogleAuthService>();
 builder.Services.AddScoped<IExternalLoginRepository,ExternalLoginRepository>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();

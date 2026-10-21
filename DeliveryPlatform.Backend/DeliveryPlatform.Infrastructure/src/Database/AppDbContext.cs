@@ -11,6 +11,8 @@ namespace DeliveryPlatform.Infrastructure.src.Database
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
         {
         }
+        public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
+
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Business> Businesses { get; set; } = null!;
         public DbSet<Product> Products { get; set; } = null!;

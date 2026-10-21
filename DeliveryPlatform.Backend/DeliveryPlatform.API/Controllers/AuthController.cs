@@ -1,6 +1,7 @@
 ﻿using DeliveryPlatform.Application.src.Features.Auth.GoogleRegister;
 using DeliveryPlatform.Application.src.Features.Auth.Login;
 using DeliveryPlatform.Application.src.Features.Auth.LoginWithGoogle.cs;
+using DeliveryPlatform.Application.src.Features.Auth.Refresh;
 using DeliveryPlatform.Application.src.Features.Auth.Register;
 using MediatR;
 using Microsoft.AspNetCore.Identity.Data;
@@ -54,6 +55,13 @@ namespace DeliveryPlatform.API.Controllers
             var token = await _mediator.Send(command, cancellationToken);
 
             return Ok(new { AccessToken = token, TokenType = "Bearer" });
+        }
+
+        [HttpPost("refresh")]
+        public async Task<ActionResult<RefreshTokenResponse>> Refresh([FromBody] RefreshTokenCommand command, CancellationToken cancellationToken)
+        {
+            var result = await _mediator.Send(command, cancellationToken);
+            return Ok(result);
         }
     }
 }

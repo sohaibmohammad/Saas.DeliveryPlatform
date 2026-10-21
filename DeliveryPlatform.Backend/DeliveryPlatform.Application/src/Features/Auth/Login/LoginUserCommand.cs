@@ -8,4 +8,4 @@ namespace DeliveryPlatform.Application.src.Features.Auth.Login;
 public record LoginUserCommand(
 string Email,
 string Password
-) : IRequest<string>;
+) : IRequest<LoginUserResponse>;
