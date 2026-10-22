@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -27,6 +28,20 @@ builder.Services.AddMediatR(cfg => {
     cfg.AddOpenBehavior(typeof(ValidationBehavior<,>));
 }
 );
+
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+{
+    var configuration = sp.GetRequiredService<IConfiguration>();
+
+    var connectionString = configuration.GetConnectionString(
+        "RedisConnection");
+
+    if (string.IsNullOrWhiteSpace(connectionString))
+        throw new InvalidOperationException(
+            "Redis connection string is missing.");
+
+    return ConnectionMultiplexer.Connect(connectionString);
+});
 
 builder.Services.AddControllers();
 
@@ -101,7 +116,7 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IPasswordHashService,PasswordHashService>();
-
+builder.Services.AddScoped<ITokenRevocationService,RedisTokenRevocationService>();
 builder.Services.AddScoped<IPasswordHasher<User>,PasswordHasher<User>>();
 
 

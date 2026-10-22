@@ -5,6 +5,10 @@ using System.Text;
 
 namespace DeliveryPlatform.Application.src.Features.Auth.Logout;
 
-public record LogoutCommand(string RefreshToken):IRequest
-{
-}
+public record LogoutCommand(
+    string RefreshToken,
+    string Jti,
+    DateTime AccessTokenExpiresAt,
+    Guid UserId
+) : IRequest;
+
