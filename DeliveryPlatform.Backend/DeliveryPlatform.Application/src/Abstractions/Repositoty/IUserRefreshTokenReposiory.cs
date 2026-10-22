@@ -11,7 +11,7 @@ namespace DeliveryPlatform.Application.src.Abstractions.Repositoty
         Task<UserRefreshToken?> GetByTokenHashAsync(
             string tokenHash,
             CancellationToken cancellationToken = default);
-
-      
+        Task<int> RevokeAllByUserIdAsync(Guid userId, CancellationToken cancellationToken);
+        Task<bool> TryRevokeAsync(Guid tokenId, Guid replacementTokenId, CancellationToken cancellationToken);
     }
 }

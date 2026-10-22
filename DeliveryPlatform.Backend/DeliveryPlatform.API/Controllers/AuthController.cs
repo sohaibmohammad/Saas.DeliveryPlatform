@@ -1,6 +1,7 @@
 ﻿using DeliveryPlatform.Application.src.Features.Auth.GoogleRegister;
 using DeliveryPlatform.Application.src.Features.Auth.Login;
 using DeliveryPlatform.Application.src.Features.Auth.LoginWithGoogle.cs;
+using DeliveryPlatform.Application.src.Features.Auth.Logout;
 using DeliveryPlatform.Application.src.Features.Auth.Refresh;
 using DeliveryPlatform.Application.src.Features.Auth.Register;
 using MediatR;
@@ -34,7 +35,7 @@ namespace DeliveryPlatform.API.Controllers
         {
             var token = await _mediator.Send(command, cancellationToken);
 
-            return Ok(new { AccessToken=token ,TokenType="Bearer" });
+            return Ok(new { tokens=token  });
         }
 
         [HttpPost("google/register")]
@@ -54,7 +55,7 @@ namespace DeliveryPlatform.API.Controllers
         {
             var token = await _mediator.Send(command, cancellationToken);
 
-            return Ok(new { AccessToken = token, TokenType = "Bearer" });
+            return Ok(new { tokens=token });
         }
 
         [HttpPost("refresh")]
@@ -63,5 +64,17 @@ namespace DeliveryPlatform.API.Controllers
             var result = await _mediator.Send(command, cancellationToken);
             return Ok(result);
         }
+
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout(
+            [FromBody] LogoutCommand  command,
+            CancellationToken cancellationToken)
+        {
+            await _mediator.Send(command, cancellationToken);
+
+            return NoContent();
+        }
+
     }
 }
