@@ -62,8 +62,16 @@ class RefreshTokenHandler : IRequestHandler<RefreshTokenCommand, RefreshTokenRes
             ExpiryDate = DateTime.UtcNow.AddDays(7)
         };
 
-        oldToken.RevokedAt = DateTime.UtcNow;
-        oldToken.ReplacedByTokenId = newToken.Id;
+        var revoked = await _refreshTokenRepository.TryRevokeAsync(
+     oldToken.Id,
+     newToken.Id,
+     cancellationToken);
+
+        if (!revoked)
+        {
+            throw new UnauthorizedAccessException(
+                "Refresh token has already been used.");
+        }
 
         await _refreshTokenRepository.AddAsync(newToken, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);

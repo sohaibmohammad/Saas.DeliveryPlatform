@@ -1,0 +1,28 @@
+
+# Build outputs
+**/bin/
+**/obj/
+
+# Visual Studio / VS Code
+**/.vs/
+**/.vscode/
+
+# Git
+.git/
+.gitignore
+
+# Environment files
+.env
+.env.*
+
+# Local settings
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/secrets.json
+
+# Test results
+**/TestResults/
+**/coverage/
+
+# Docker Compose local overrides
+compose.override.yaml
