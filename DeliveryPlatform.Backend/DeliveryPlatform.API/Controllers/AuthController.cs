@@ -1,4 +1,5 @@
-﻿using DeliveryPlatform.Application.src.Features.Auth.GoogleRegister;
+﻿using Azure.Core;
+using DeliveryPlatform.Application.src.Features.Auth.GoogleRegister;
 using DeliveryPlatform.Application.src.Features.Auth.Login;
 using DeliveryPlatform.Application.src.Features.Auth.LoginWithGoogle.cs;
 using DeliveryPlatform.Application.src.Features.Auth.Logout;
@@ -9,6 +10,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 
 namespace DeliveryPlatform.API.Controllers;
@@ -68,16 +70,42 @@ public class AuthController:ControllerBase
         return Ok(result);
     }
 
-
+    [Authorize]
     [HttpPost("logout")]
     public async Task<IActionResult> Logout(
-        [FromBody] LogoutCommand  command,
+        [FromBody]  LogoutRequest request,
         CancellationToken cancellationToken)
     {
-        await _mediator.Send(command, cancellationToken);
+        var jti = User.FindFirstValue(JwtRegisteredClaimNames.Jti);
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                     ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        var exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
+
+        if (string.IsNullOrWhiteSpace(jti) ||
+            !Guid.TryParse(userId, out var parsedUserId) ||
+            !long.TryParse(exp, out var expiration))
+        {
+            return Unauthorized();
+        }
+
+        var expiresAt = DateTimeOffset
+            .FromUnixTimeSeconds(expiration)
+            .UtcDateTime;
+
+        await _mediator.Send(
+            new LogoutCommand(
+                request.RefreshToken,
+                jti,
+                expiresAt,
+                parsedUserId),
+            cancellationToken);
 
         return NoContent();
     }
+
+
     [Authorize]
     [HttpPost("logout-all")]
     public async Task<IActionResult> LogoutAllDevices(
