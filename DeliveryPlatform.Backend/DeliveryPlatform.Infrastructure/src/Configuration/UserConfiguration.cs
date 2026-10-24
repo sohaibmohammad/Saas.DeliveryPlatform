@@ -29,6 +29,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
         builder.Property(x => x.CreatedAt)
             .IsRequired();
+        builder.Property(u => u.TokenVersion)
+    .IsRequired()
+    .HasDefaultValue(0);
 
         builder.HasIndex(x => x.Email)
             .IsUnique();

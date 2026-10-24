@@ -10,6 +10,8 @@ public class User
 
     public string Name { get; set; } = null!;
 
+    public int TokenVersion { get; set; } = 0;
+
     public string Email { get; set; } = null!;
 
     public string? PasswordHash { get; set; } = null!;

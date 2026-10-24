@@ -15,6 +15,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -72,6 +74,8 @@ builder.Services
         "JWT expiration must be greater than zero.")
     .ValidateOnStart();
 
+
+
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -96,7 +100,54 @@ builder.Services
 
             ClockSkew = TimeSpan.Zero
         };
+        options.Events = new JwtBearerEvents { 
+            OnTokenValidated=async context =>
+            {
+                var services=context.HttpContext.RequestServices;
+                var revocationService = services.GetRequiredService<ITokenRevocationService>();
+                var userRepository = services.GetRequiredService<IUserRepository>();
+                var jti=context.Principal?.FindFirst(JwtRegisteredClaimNames.Jti).Value;
+                var userIdValue=context.Principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? context.Principal?.FindFirst(JwtRegisteredClaimNames.Sub)?.Value;
+
+                var tokenVersionValue = context.Principal?
+                    .FindFirst("token_version")?.Value;
+                if (string.IsNullOrWhiteSpace(jti) ||
+                                 !Guid.TryParse(userIdValue, out var userId) ||
+                                 !int.TryParse(tokenVersionValue, out var tokenVersion))
+                {
+                    context.Fail("Invalid token claims.");
+                    return;
+                }
+
+                try
+                {
+                    if (await revocationService.IsRevokedAsync(jti))
+                    {
+                        context.Fail("Access token has been revoked.");
+                        return;
+                    }
+
+                    var user = await userRepository.GetByIdAsync(
+                        userId,
+                        context.HttpContext.RequestAborted);
+
+                    if (user is null ||
+                        user.TokenVersion != tokenVersion)
+                    {
+                        context.Fail("Token is no longer valid.");
+                        return;
+                    }
+                }
+                catch (Exception)
+                {
+                    context.Fail("Unable to validate token.");
+                }
+            }
+        };
     });
+
+
 
 builder.Services
     .AddOptions<GoogleAuthOptions>()
@@ -114,6 +165,7 @@ builder.Services.AddScoped<IExternalLoginRepository,ExternalLoginRepository>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IPasswordHashService,PasswordHashService>();
 builder.Services.AddScoped<ITokenRevocationService,RedisTokenRevocationService>();

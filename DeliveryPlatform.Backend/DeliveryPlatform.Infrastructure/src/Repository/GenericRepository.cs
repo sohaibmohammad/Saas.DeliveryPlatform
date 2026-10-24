@@ -21,4 +21,9 @@ public class GenericRepository<TEntity> : IGenericRepository<TEntity> where TEnt
     {
         await _dbSet.AddAsync(entity, cancellationToken);
     }
+
+    public async Task<TEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken)
+    {
+        return await _dbSet.FindAsync(new object[] { id }, cancellationToken);
+    }
 }

@@ -9,5 +9,5 @@ public interface IGenericRepository<TEntity> where TEntity : class
     public  Task AddAsync(
        TEntity entity,
        CancellationToken cancellationToken);
-      
-   }
+    Task<TEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
+}
