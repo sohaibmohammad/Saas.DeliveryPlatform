@@ -47,6 +47,22 @@ public class ExceptionHandlingMiddlware
             await context.Response.WriteAsync(
                 JsonSerializer.Serialize(response));
         }
+        catch (KeyNotFoundException ex)
+        {
+            _logger.LogWarning(ex, "A requested resource was not found.");
+
+            context.Response.StatusCode =
+                StatusCodes.Status404NotFound;
+
+            context.Response.ContentType = "application/json";
+
+            await context.Response.WriteAsync(
+                JsonSerializer.Serialize(new
+                {
+                    StatusCode = 404,
+                    Message = ex.Message
+                }));
+        }
         catch (InvalidOperationException ex)
         {
             _logger.LogWarning(ex, "A business rule was violated.");

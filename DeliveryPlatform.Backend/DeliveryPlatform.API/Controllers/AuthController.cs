@@ -12,7 +12,7 @@ using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-
+using DeliveryPlatform.API.Common.Extensions;
 namespace DeliveryPlatform.API.Controllers;
 
 [ApiController]
@@ -77,14 +77,11 @@ public class AuthController:ControllerBase
         CancellationToken cancellationToken)
     {
         var jti = User.FindFirstValue(JwtRegisteredClaimNames.Jti);
-
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                     ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
-
+        var userId = User.GetUserId();
         var exp = User.FindFirstValue(JwtRegisteredClaimNames.Exp);
 
         if (string.IsNullOrWhiteSpace(jti) ||
-            !Guid.TryParse(userId, out var parsedUserId) ||
+            userId is null ||
             !long.TryParse(exp, out var expiration))
         {
             return Unauthorized();
@@ -99,7 +96,7 @@ public class AuthController:ControllerBase
                 request.RefreshToken,
                 jti,
                 expiresAt,
-                parsedUserId),
+                userId.Value),
             cancellationToken);
 
         return NoContent();
@@ -111,10 +108,7 @@ public class AuthController:ControllerBase
     public async Task<IActionResult> LogoutAllDevices(
 CancellationToken cancellationToken)
     {
-        var userIdValue = User.FindFirstValue(
-            ClaimTypes.NameIdentifier);
-
-        if (!Guid.TryParse(userIdValue, out var userId))
+        if (User.GetUserId() is not { } userId)
             return Unauthorized();
 
         await _mediator.Send(

@@ -22,6 +22,11 @@ The project follows Clean Architecture and uses CQRS with MediatR. It is built a
 - Ownership checks on update
 - Paginated "my businesses" endpoint
 
+### Branch management
+- Create a branch under an owned business
+- Update branch details, coordinates, and active status
+- Ownership and business/branch consistency checks
+
 ### Platform foundation
 - Clean Architecture with API, Application, Domain, and Infrastructure layers
 - CQRS handlers and FluentValidation pipeline behavior
@@ -213,6 +218,36 @@ Base route: `/api`
 | `PUT` | `/api/Business/{businessId}` | Yes | Update an owned business |
 | `GET` | `/api/Business/my?pageNumber=1&pageSize=10` | Yes | List the current user's businesses |
 
+### Branches
+
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
+| `POST` | `/api/businesses/{businessId}/branches` | Yes | Create a branch under an owned business |
+| `PUT` | `/api/businesses/{businessId}/branches/{branchId}` | Yes | Update a branch under an owned business |
+
+Branch create body:
+
+```json
+{
+  "name": "Main Branch",
+  "address": "123 Main St",
+  "latitude": 31.9539,
+  "longitude": 35.9106
+}
+```
+
+Branch update body:
+
+```json
+{
+  "name": "Main Branch",
+  "address": "123 Main St",
+  "latitude": 31.9539,
+  "longitude": 35.9106,
+  "isActive": true
+}
+```
+
 ## Request Examples
 
 Register:
@@ -322,6 +357,7 @@ Response: `204 No Content`
 | --- | --- | --- |
 | `ValidationException` | `400` | Request validation failed; includes per-field errors |
 | `InvalidOperationException` | `409` | Business rule conflict, such as a duplicate email |
+| `KeyNotFoundException` | `404` | Requested resource was not found |
 | `UnauthorizedAccessException` | `401` | Invalid credentials or tokens |
 | Any other exception | `500` | Unexpected server error |
 
@@ -355,13 +391,14 @@ Implemented:
 - JWT access tokens and refresh-token rotation
 - Redis token revocation and all-device logout
 - Business create/update/list with pagination
+- Branch create/update with ownership checks
 - Domain model for businesses, branches, categories, products, and inventory
 - EF Core migrations and repository/Unit of Work infrastructure
 - Docker Compose for API, SQL Server, and Redis
 
 Planned or in progress:
 
-- Product, category, branch, and inventory endpoints
+- Product, category, and inventory endpoints
 - Cart and order lifecycle
 - Payment and delivery workflows
 - Driver/captain assignment and location handling
