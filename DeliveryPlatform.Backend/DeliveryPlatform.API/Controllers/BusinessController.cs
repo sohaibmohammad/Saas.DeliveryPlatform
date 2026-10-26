@@ -1,5 +1,6 @@
 using DeliveryPlatform.Application.src.Features.Business.Create;
 using DeliveryPlatform.Application.src.Features.Business.GetMy;
+using DeliveryPlatform.Application.src.Features.Business.Update;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -39,6 +40,27 @@ public class BusinessController : ControllerBase
         return StatusCode(StatusCodes.Status201Created, new { id = businessId });
     }
 
+    [HttpPut("{businessId:guid}")]
+    public async Task<IActionResult> Update(Guid businessId, [FromBody] UpdateBusinessRequest request, CancellationToken cancellationToken)
+    {
+        var userIdValue = User.FindFirstValue(ClaimTypes.NameIdentifier)
+                          ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+        if (!Guid.TryParse(userIdValue, out var userId))
+            return Unauthorized();
+
+        var command = new UpdateBusinessCommand(
+            businessId,
+            request.Name,
+            request.Description,
+            request.BusinessType,
+            request.IsActive,
+            userId);
+
+        var updatedBusinessId = await _mediator.Send(command, cancellationToken);
+        return Ok(new { id = updatedBusinessId });
+    }
+
     [HttpGet("my")]
     public async Task<IActionResult> GetMy([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
     {
@@ -53,4 +75,4 @@ public class BusinessController : ControllerBase
     }
 }
 
-public record CreateBusinessRequest(string Name, string? Description, Domain.src.Entity.BusinessType BusinessType);
+
