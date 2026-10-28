@@ -25,6 +25,9 @@ The project follows Clean Architecture and uses CQRS with MediatR. It is built a
 ### Branch management
 - Create a branch under an owned business
 - Update branch details, coordinates, and active status
+- List branches for an owned business with pagination
+- Get a single branch by ID
+- Admins can read branches for any business
 - Ownership and business/branch consistency checks
 
 ### Platform foundation
@@ -224,6 +227,8 @@ Base route: `/api`
 | --- | --- | --- | --- |
 | `POST` | `/api/businesses/{businessId}/branches` | Yes | Create a branch under an owned business |
 | `PUT` | `/api/businesses/{businessId}/branches/{branchId}` | Yes | Update a branch under an owned business |
+| `GET` | `/api/businesses/{businessId}/branches?pageNumber=1&pageSize=10` | Yes | List branches for an owned business (admin: any business) |
+| `GET` | `/api/businesses/{businessId}/branches/{branchId}` | Yes | Get a branch by ID (admin: any business) |
 
 Branch create body:
 
@@ -391,7 +396,7 @@ Implemented:
 - JWT access tokens and refresh-token rotation
 - Redis token revocation and all-device logout
 - Business create/update/list with pagination
-- Branch create/update with ownership checks
+- Branch create/update/read with ownership checks and admin read access
 - Domain model for businesses, branches, categories, products, and inventory
 - EF Core migrations and repository/Unit of Work infrastructure
 - Docker Compose for API, SQL Server, and Redis

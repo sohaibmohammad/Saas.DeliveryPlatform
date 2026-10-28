@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using DeliveryPlatform.Application.src.Common.Exceptions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using ValidationException = FluentValidation.ValidationException;
@@ -47,6 +48,22 @@ public class ExceptionHandlingMiddlware
             await context.Response.WriteAsync(
                 JsonSerializer.Serialize(response));
         }
+        catch (NotFoundException ex)
+        {
+            _logger.LogWarning(ex, "A requested resource was not found.");
+
+            context.Response.StatusCode =
+                StatusCodes.Status404NotFound;
+
+            context.Response.ContentType = "application/json";
+
+            await context.Response.WriteAsync(
+                JsonSerializer.Serialize(new
+                {
+                    StatusCode = 404,
+                    Message = ex.Message
+                }));
+        }
         catch (KeyNotFoundException ex)
         {
             _logger.LogWarning(ex, "A requested resource was not found.");
@@ -62,6 +79,24 @@ public class ExceptionHandlingMiddlware
                     StatusCode = 404,
                     Message = ex.Message
                 }));
+        }
+        catch (BusinessRuleException ex)
+        {
+            _logger.LogWarning(ex, "A business rule was violated.");
+
+            context.Response.StatusCode =
+                StatusCodes.Status409Conflict;
+
+            context.Response.ContentType = "application/json";
+
+            var response = new
+            {
+                StatusCode = 409,
+                Message = ex.Message
+            };
+
+            await context.Response.WriteAsync(
+                JsonSerializer.Serialize(response));
         }
         catch (InvalidOperationException ex)
         {

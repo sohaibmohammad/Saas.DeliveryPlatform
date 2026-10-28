@@ -1,6 +1,78 @@
 @DeliveryPlatform.API_HostAddress = http://localhost:5140
+@token = YOUR_JWT_TOKEN
+@businessId = YOUR_BUSINESS_ID
+@categoryId = YOUR_CATEGORY_ID
+@productId = YOUR_PRODUCT_ID
 
-GET {{DeliveryPlatform.API_HostAddress}}/weatherforecast/
+### Categories
+
+#### Create Category
+POST {{DeliveryPlatform.API_HostAddress}}/api/businesses/{{businessId}}/categories
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Drinks"
+}
+
+### Get Categories By Business (Paged)
+GET {{DeliveryPlatform.API_HostAddress}}/api/businesses/{{businessId}}/categories?pageNumber=1&pageSize=10
+Authorization: Bearer {{token}}
 Accept: application/json
 
-###
+### Get Category By Id
+GET {{DeliveryPlatform.API_HostAddress}}/api/businesses/{{businessId}}/categories/{{categoryId}}
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Update Category
+PUT {{DeliveryPlatform.API_HostAddress}}/api/businesses/{{businessId}}/categories/{{categoryId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Beverages"
+}
+
+### Products
+
+#### Create Product
+POST {{DeliveryPlatform.API_HostAddress}}/api/businesses/{{businessId}}/products
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "categoryId": "{{categoryId}}",
+  "name": "Coca Cola",
+  "description": "330ml can",
+  "price": 2.50,
+  "isAvailable": true
+}
+
+### Get Products By Business (Paged)
+GET {{DeliveryPlatform.API_HostAddress}}/api/businesses/{{businessId}}/products?pageNumber=1&pageSize=10
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Get Products By Business Filtered By Category (Paged)
+GET {{DeliveryPlatform.API_HostAddress}}/api/businesses/{{businessId}}/products?categoryId={{categoryId}}&pageNumber=1&pageSize=10
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Get Product By Id
+GET {{DeliveryPlatform.API_HostAddress}}/api/businesses/{{businessId}}/products/{{productId}}
+Authorization: Bearer {{token}}
+Accept: application/json
+
+### Update Product
+PUT {{DeliveryPlatform.API_HostAddress}}/api/businesses/{{businessId}}/products/{{productId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "categoryId": "{{categoryId}}",
+  "name": "Coca Cola Zero",
+  "description": "330ml can",
+  "price": 2.75,
+  "isAvailable": true
+}
