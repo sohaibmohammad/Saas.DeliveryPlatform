@@ -31,5 +31,11 @@ public class InventoryConfiguration : IEntityTypeConfiguration<Inventory>
             .WithMany(x => x.Inventories)
                 .HasForeignKey(x => x.ProductId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.ToTable(t =>
+        {
+            t.HasCheckConstraint("CK_Inventory_Quantity", "[Quantity] >= 0");
+            t.HasCheckConstraint("CK_Inventory_ReservedQuantity", "[ReservedQuantity] >= 0 AND [ReservedQuantity] <= [Quantity]");
+        });
     }
 }

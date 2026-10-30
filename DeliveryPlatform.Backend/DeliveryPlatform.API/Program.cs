@@ -22,7 +22,7 @@ using System.Security.Claims;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddValidatorsFromAssembly(typeof(RegisterUserValidator).Assembly);
-builder.Services.AddAutoMapper(typeof(DeliveryPlatform.Application.src.Common.Mappings.MappingProfile).Assembly);
+builder.Services.AddAutoMapper(_ => { }, typeof(DeliveryPlatform.Application.src.Common.Mappings.MappingProfile).Assembly);
 
 builder.Services.AddMediatR(cfg => {
     cfg.RegisterServicesFromAssemblyContaining<RegisterUserHandler>();
@@ -141,6 +141,7 @@ builder.Services.AddScoped<IBusinessRepository, BusinessRepository>();
 builder.Services.AddScoped<IBranchRepository, BranchRepository>();
 builder.Services.AddScoped<ICategoryRepository, CategoryRepository>();
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IInventoryRepository, InventoryRepository>();
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddScoped<IPasswordHashService, PasswordHashService>();
 builder.Services.AddScoped<ITokenRevocationService, RedisTokenRevocationService>();

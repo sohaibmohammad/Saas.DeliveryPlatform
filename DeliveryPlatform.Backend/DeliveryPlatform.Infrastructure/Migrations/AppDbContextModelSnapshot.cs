@@ -175,7 +175,12 @@ namespace DeliveryPlatform.Infrastructure.Migrations
                     b.HasIndex("BranchId", "ProductId")
                         .IsUnique();
 
-                    b.ToTable("Inventories");
+                    b.ToTable("Inventories", t =>
+                        {
+                            t.HasCheckConstraint("CK_Inventory_Quantity", "[Quantity] >= 0");
+
+                            t.HasCheckConstraint("CK_Inventory_ReservedQuantity", "[ReservedQuantity] >= 0 AND [ReservedQuantity] <= [Quantity]");
+                        });
                 });
 
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Product", b =>
