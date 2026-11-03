@@ -59,4 +59,13 @@ public class InventoryRepository : GenericRepository<Inventory>, IInventoryRepos
         await _context.SaveChangesAsync(cancellationToken);
         return true;
     }
+
+    public async Task<bool> ReserveStockAsync(Guid branchId, Guid productId, int quantityToReserve, CancellationToken cancellationToken)
+    {
+        var inventory =await _context.Inventories.Where(i => i.BranchId == branchId && i.ProductId == productId
+        && i.Quantity>= i.ReservedQuantity && i.Quantity - i.ReservedQuantity >= quantityToReserve
+        ).ExecuteUpdateAsync(
+            seters=>seters.SetProperty(i=>i.ReservedQuantity, i => i.ReservedQuantity + quantityToReserve).SetProperty(i=>i.UpdatedAt, DateTime.UtcNow),cancellationToken);
+        return inventory > 0;
+    }
 }
