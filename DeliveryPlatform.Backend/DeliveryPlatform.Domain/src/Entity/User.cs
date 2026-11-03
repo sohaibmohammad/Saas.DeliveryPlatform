@@ -23,6 +23,9 @@ public class User
     // Navigation
     public ICollection<Business> Businesses { get; set; } = new List<Business>();
 
+    public ICollection<Order> Orders { get; set; } = new List<Order>();
+
+
     public ICollection<ExternalLogins> ExternalLogins { get; set; }
     = new List<ExternalLogins>();
 }

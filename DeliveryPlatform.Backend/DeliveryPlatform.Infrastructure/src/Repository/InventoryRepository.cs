@@ -62,6 +62,10 @@ public class InventoryRepository : GenericRepository<Inventory>, IInventoryRepos
 
     public async Task<bool> ReserveStockAsync(Guid branchId, Guid productId, int quantityToReserve, CancellationToken cancellationToken)
     {
+        if (quantityToReserve <= 0)
+            throw new ArgumentException(
+                "Quantity to reserve must be greater than zero.");
+
         var inventory =await _context.Inventories.Where(i => i.BranchId == branchId && i.ProductId == productId
         && i.Quantity>= i.ReservedQuantity && i.Quantity - i.ReservedQuantity >= quantityToReserve
         ).ExecuteUpdateAsync(

@@ -20,11 +20,11 @@ public class Product
 
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    // Navigation
     public Business Business { get; set; } = null!;
 
     public Category Category { get; set; } = null!;
 
     public ICollection<Inventory> Inventories { get; set; }
         = new List<Inventory>();
+    public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
 }

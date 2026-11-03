@@ -1,5 +1,6 @@
 ﻿using DeliveryPlatform.API.Common.Extensions;
 using DeliveryPlatform.Application.src.Features.Inventory.GetByBranch;
+using DeliveryPlatform.Application.src.Features.Inventory.ReserveStock;
 using DeliveryPlatform.Application.src.Features.Inventory.SetInventory;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -63,5 +64,23 @@ public class InventoryController : ControllerBase
 
         var result = await _mediator.Send(query, cancellationToken);
         return Ok(result);
+    }
+
+    [HttpPost("reserve")]
+    public async Task<IActionResult> ReserveStock(
+    Guid businessId,
+    Guid branchId,
+    Guid productId,
+    [FromBody] ReserveStockRequest request,
+    CancellationToken cancellationToken)
+    {
+        var command = new ReserveStockCommand(
+            branchId,
+            productId,
+            request.QuantityToReserve);
+
+        var result = await _mediator.Send(command, cancellationToken);
+
+        return Ok(new { Success = result });
     }
 }

@@ -183,6 +183,105 @@ namespace DeliveryPlatform.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Order", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BranchId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BusinessId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeliveryAddress")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<decimal>("DeliveryFee")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<string>("OrderNumber")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("Total")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderNumber")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("BranchId", "CreatedAt");
+
+                    b.HasIndex("BusinessId", "CreatedAt");
+
+                    b.ToTable("Orders");
+                });
+
+            modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.OrderItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ProductId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ProductName")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("int");
+
+                    b.Property<decimal>("TotalPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("UnitPrice")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("OrderId");
+
+                    b.HasIndex("ProductId");
+
+                    b.ToTable("OrderItems");
+                });
+
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Product", b =>
                 {
                     b.Property<Guid>("Id")
@@ -357,6 +456,52 @@ namespace DeliveryPlatform.Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Order", b =>
+                {
+                    b.HasOne("DeliveryPlatform.Domain.src.Entity.Branch", "Branch")
+                        .WithMany("Orders")
+                        .HasForeignKey("BranchId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DeliveryPlatform.Domain.src.Entity.Business", "Business")
+                        .WithMany("Orders")
+                        .HasForeignKey("BusinessId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DeliveryPlatform.Domain.src.Entity.User", "User")
+                        .WithMany("Orders")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Branch");
+
+                    b.Navigation("Business");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.OrderItem", b =>
+                {
+                    b.HasOne("DeliveryPlatform.Domain.src.Entity.Order", "Order")
+                        .WithMany("Items")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("DeliveryPlatform.Domain.src.Entity.Product", "Product")
+                        .WithMany("OrderItems")
+                        .HasForeignKey("ProductId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("Product");
+                });
+
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Product", b =>
                 {
                     b.HasOne("DeliveryPlatform.Domain.src.Entity.Business", "Business")
@@ -391,6 +536,8 @@ namespace DeliveryPlatform.Infrastructure.Migrations
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Branch", b =>
                 {
                     b.Navigation("Inventories");
+
+                    b.Navigation("Orders");
                 });
 
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Business", b =>
@@ -398,6 +545,8 @@ namespace DeliveryPlatform.Infrastructure.Migrations
                     b.Navigation("Branches");
 
                     b.Navigation("Categories");
+
+                    b.Navigation("Orders");
 
                     b.Navigation("Products");
                 });
@@ -407,9 +556,16 @@ namespace DeliveryPlatform.Infrastructure.Migrations
                     b.Navigation("Products");
                 });
 
+            modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Order", b =>
+                {
+                    b.Navigation("Items");
+                });
+
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Product", b =>
                 {
                     b.Navigation("Inventories");
+
+                    b.Navigation("OrderItems");
                 });
 
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.User", b =>
@@ -417,6 +573,8 @@ namespace DeliveryPlatform.Infrastructure.Migrations
                     b.Navigation("Businesses");
 
                     b.Navigation("ExternalLogins");
+
+                    b.Navigation("Orders");
                 });
 #pragma warning restore 612, 618
         }
