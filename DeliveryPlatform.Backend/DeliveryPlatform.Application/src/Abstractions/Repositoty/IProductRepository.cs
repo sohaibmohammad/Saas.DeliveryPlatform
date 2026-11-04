@@ -7,4 +7,5 @@ public interface IProductRepository : IGenericRepository<Product>
     Task<Product?> GetByBusinessIdAndProductIdAsync(Guid businessId, Guid productId, CancellationToken cancellationToken);
     Task<List<Product>> GetByBusinessIdAsync(Guid businessId, Guid? categoryId, CancellationToken cancellationToken);
     Task<bool> ExistsByNameInCategoryAsync(Guid businessId, Guid categoryId, string name, Guid? excludeProductId, CancellationToken cancellationToken);
+    Task<List<Product>> GetByIdsAsync(Guid businessId, List<Guid> productIds, CancellationToken cancellationToken);
 }

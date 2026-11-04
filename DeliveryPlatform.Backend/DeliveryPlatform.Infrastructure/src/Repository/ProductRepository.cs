@@ -46,4 +46,11 @@ public class ProductRepository : GenericRepository<Product>, IProductRepository
 
         return await query.AnyAsync(cancellationToken);
     }
+
+    public async Task<List<Product>> GetByIdsAsync(Guid businessId,List<Guid> productIds, CancellationToken cancellationToken)
+    {
+        return await _context.Products
+            .Where(p => p.BusinessId == businessId && productIds.Contains(p.Id))
+            .ToListAsync(cancellationToken);
+    }
 }

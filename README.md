@@ -30,6 +30,33 @@ The project follows Clean Architecture and uses CQRS with MediatR. It is built a
 - Admins can read branches for any business
 - Ownership and business/branch consistency checks
 
+### Category management
+- Create and update categories under an owned business
+- Category names unique within a business
+- List categories for a business with pagination
+- Get a single category by ID
+- Admins can read categories for any business
+
+### Product catalog
+- Create and update products under an owned business category
+- Product names unique within a category
+- Optional category filter and pagination when listing products
+- Get a single product by ID
+- Admins can read products for any business
+
+### Inventory
+- Set the available quantity for a product at a branch
+- Quantities cannot be set below the reserved amount
+- Reserve stock atomically
+- List inventory per branch with pagination (quantity, reserved, available)
+
+### Orders
+- Create an order for a branch with one or more products
+- Product prices, subtotal, and total are calculated server-side from database data; delivery fee is currently zero pending delivery rules
+- Stock is reserved for each ordered product inside a transaction
+- Order items snapshot product name, unit price, quantity, and line total
+- Returns order ID, order number, monetary breakdown, and status
+
 ### Platform foundation
 - Clean Architecture with API, Application, Domain, and Infrastructure layers
 - CQRS handlers and FluentValidation pipeline behavior
@@ -92,6 +119,8 @@ API ──────────► Application ──► Domain
 | `Category` | Product category scoped to a business |
 | `Product` | Business product with price, availability, and category |
 | `Inventory` | Quantity and reserved quantity for a product at a branch |
+| `Order` | Customer order for a branch with number, status, totals, and delivery address |
+| `OrderItem` | Line item snapshot of a product (name, unit price, quantity, total) |
 | `ExternalLogins` | Provider link for external authentication (Google) |
 | `UserRefreshToken` | Hashed refresh token, expiry, revocation, and replacement chain |
 
@@ -253,6 +282,93 @@ Branch update body:
 }
 ```
 
+### Categories
+
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
+| `POST` | `/api/businesses/{businessId}/categories` | Yes | Create a category under an owned business |
+| `PUT` | `/api/businesses/{businessId}/categories/{categoryId}` | Yes | Update a category under an owned business |
+| `GET` | `/api/businesses/{businessId}/categories?pageNumber=1&pageSize=10` | Yes | List categories for a business (admin: any business) |
+| `GET` | `/api/businesses/{businessId}/categories/{categoryId}` | Yes | Get a category by ID (admin: any business) |
+
+Category create/update body:
+
+```json
+{
+  "name": "Beverages"
+}
+```
+
+### Products
+
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
+| `POST` | `/api/businesses/{businessId}/products` | Yes | Create a product under an owned business |
+| `PUT` | `/api/businesses/{businessId}/products/{productId}` | Yes | Update a product under an owned business |
+| `GET` | `/api/businesses/{businessId}/products?categoryId={categoryId}&pageNumber=1&pageSize=10` | Yes | List products for a business with optional category filter |
+| `GET` | `/api/businesses/{businessId}/products/{productId}` | Yes | Get a product by ID |
+
+Product create body:
+
+```json
+{
+  "categoryId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "name": "Orange Juice",
+  "description": "Freshly squeezed",
+  "price": 2.50,
+  "isAvailable": true
+}
+```
+
+Product update body requires the same fields, including `isAvailable`.
+
+### Inventory
+
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
+| `PUT` | `/api/businesses/{businessId}/branches/{branchId}/inventory/{productId}` | Yes | Set the quantity for a product at a branch |
+| `GET` | `/api/businesses/{businessId}/branches/{branchId}/inventory?pageNumber=1&pageSize=10` | Yes | List inventory for a branch |
+| `POST` | `/api/businesses/{businessId}/branches/{branchId}/inventory/reserve?productId={productId}` | Yes | Reserve stock for a product |
+
+Set inventory body:
+
+```json
+{
+  "quantity": 50
+}
+```
+
+Reserve stock body:
+
+```json
+{
+  "quantityToReserve": 2
+}
+```
+
+### Orders
+
+| Method | Route | Auth | Description |
+| --- | --- | --- | --- |
+| `POST` | `/api/orders` | Yes | Create an order for a branch |
+
+Create order body:
+
+```json
+{
+  "branchId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "deliveryAddress": "123 Main St",
+  "items": [
+    {
+      "productId": "8d1f0f1e-7c1a-4d8e-9b2f-3a6c5e4d2b10",
+      "quantity": 2
+    }
+  ]
+}
+```
+
+The client sends only product IDs and quantities. Product prices, subtotal, delivery fee, and total are resolved or calculated by the handler from database data. Response: `201 Created` with `orderId`, `orderNumber`, `subtotal`, `deliveryFee`, `total`, and `status`.
+
 ## Request Examples
 
 Register:
@@ -362,6 +478,8 @@ Response: `204 No Content`
 | --- | --- | --- |
 | `ValidationException` | `400` | Request validation failed; includes per-field errors |
 | `InvalidOperationException` | `409` | Business rule conflict, such as a duplicate email |
+| `BusinessRuleException` | `409` | Business rule conflict |
+| `NotFoundException` | `404` | Requested entity was not found |
 | `KeyNotFoundException` | `404` | Requested resource was not found |
 | `UnauthorizedAccessException` | `401` | Invalid credentials or tokens |
 | Any other exception | `500` | Unexpected server error |
@@ -397,14 +515,16 @@ Implemented:
 - Redis token revocation and all-device logout
 - Business create/update/list with pagination
 - Branch create/update/read with ownership checks and admin read access
-- Domain model for businesses, branches, categories, products, and inventory
+- Category and product create/update/read with ownership checks
+- Inventory set, reserve, and per-branch listing
+- Initial order creation with server-side pricing and stock reservation
+- Domain model for businesses, branches, categories, products, inventory, and orders
 - EF Core migrations and repository/Unit of Work infrastructure
 - Docker Compose for API, SQL Server, and Redis
 
 Planned or in progress:
 
-- Product, category, and inventory endpoints
-- Cart and order lifecycle
+- Cart and order listing/status lifecycle
 - Payment and delivery workflows
 - Driver/captain assignment and location handling
 - Integration tests and automated database migration on startup
