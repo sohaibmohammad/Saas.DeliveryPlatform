@@ -1,3 +1,4 @@
+using DeliveryPlatform.Application.src.Features.Order.Cancel;
 using DeliveryPlatform.Application.src.Features.Order.Create;
 using DeliveryPlatform.Application.src.Features.Order.Get;
 using DeliveryPlatform.Application.src.Features.Order.GetDetails;
@@ -52,6 +53,18 @@ public class OrdersController : ControllerBase
         var query = new GetOrderDetailsQuery(orderId);
 
         var result = await _mediator.Send(query, cancellationToken);
+
+        return Ok(result);
+    }
+
+    [HttpPost("{orderId}/cancel")]
+    public async Task<IActionResult> CancelOrder(
+        [FromRoute] Guid orderId,
+        CancellationToken cancellationToken = default)
+    {
+        var command = new CancelOrderCommand(orderId);
+
+        var result = await _mediator.Send(command, cancellationToken);
 
         return Ok(result);
     }

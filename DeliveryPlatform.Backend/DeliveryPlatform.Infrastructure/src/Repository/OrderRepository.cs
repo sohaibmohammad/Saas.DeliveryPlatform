@@ -75,4 +75,10 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
                .FirstOrDefaultAsync(o=> o.Id == orderId && o.UserId == userId, cancellationToken);
         return order;
     }
+
+    public async Task<Order?> GetForCancellationAsync(Guid orderId,Guid userId,CancellationToken cancellationToken)
+    {
+        return await _context.Orders.Include(o=>o.Items)
+             .FirstOrDefaultAsync(o => o.Id == orderId && o.UserId == userId, cancellationToken);
+    }
 }

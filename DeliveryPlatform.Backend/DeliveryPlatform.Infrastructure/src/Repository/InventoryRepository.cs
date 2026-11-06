@@ -72,4 +72,21 @@ public class InventoryRepository : GenericRepository<Inventory>, IInventoryRepos
             seters=>seters.SetProperty(i=>i.ReservedQuantity, i => i.ReservedQuantity + quantityToReserve).SetProperty(i=>i.UpdatedAt, DateTime.UtcNow),cancellationToken);
         return inventory > 0;
     }
+
+    public async Task<bool> ReleaseReservedStockAsync(Guid branchId, Guid productId, int quantityToRelease, CancellationToken cancellationToken)
+    {
+        if (quantityToRelease <= 0)
+            throw new ArgumentException(
+                "Quantity to release must be greater than zero.");
+
+        var affectedRows = await _context.Inventories.Where
+            (i => i.BranchId == branchId && i.ProductId == productId && i.ReservedQuantity >= quantityToRelease)
+            .ExecuteUpdateAsync(
+            setters => setters.
+            SetProperty(i => i.ReservedQuantity, i => i.ReservedQuantity - quantityToRelease)
+            .SetProperty(i => i.UpdatedAt, DateTime.UtcNow),
+            cancellationToken
+            );
+        return affectedRows > 0;
+    }
 }
