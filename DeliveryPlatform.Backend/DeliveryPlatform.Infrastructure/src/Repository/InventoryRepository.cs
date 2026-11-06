@@ -89,4 +89,30 @@ public class InventoryRepository : GenericRepository<Inventory>, IInventoryRepos
             );
         return affectedRows > 0;
     }
+
+    public async Task<bool> CommitReservedStockAsync(Guid branchId,Guid productId,int quantity,CancellationToken cancellationToken)
+    {
+        if (quantity <= 0)
+            throw new ArgumentException("Quantity must be greater than zero.");
+        var affectedRows = await _context.Inventories
+       .Where(i =>
+           i.BranchId == branchId &&
+           i.ProductId == productId &&
+           i.ReservedQuantity >= quantity &&
+           i.Quantity >= quantity)
+       .ExecuteUpdateAsync(
+           setters => setters
+               .SetProperty(
+                   i => i.Quantity,
+                   i => i.Quantity - quantity)
+               .SetProperty(
+                   i => i.ReservedQuantity,
+                   i => i.ReservedQuantity - quantity)
+               .SetProperty(
+                   i => i.UpdatedAt,
+                   DateTime.UtcNow),
+           cancellationToken);
+
+        return affectedRows > 0;
+    }
 }

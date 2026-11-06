@@ -5,6 +5,7 @@ namespace DeliveryPlatform.Application.src.Abstractions.Repositoty;
 
 public interface IInventoryRepository : IGenericRepository<Inventory>
 {
+    Task<bool> CommitReservedStockAsync(Guid branchId, Guid productId, int quantity, CancellationToken cancellationToken);
     Task<Inventory?> GetByBranchIdAndProductIdAsync(Guid branchId, Guid productId, CancellationToken cancellationToken);
     Task<(List<BranchInventoryResponse>, int TotalCount)> GetByBranchIdAsync(Guid branchId, int pageNumber, int pageSize, CancellationToken cancellationToken);
     Task<bool> ReleaseReservedStockAsync(Guid branchId, Guid productId, int quantityToRelease, CancellationToken cancellationToken);
