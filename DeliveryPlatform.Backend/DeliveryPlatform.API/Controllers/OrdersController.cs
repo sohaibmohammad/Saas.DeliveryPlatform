@@ -1,4 +1,6 @@
 using DeliveryPlatform.Application.src.Features.Order.Create;
+using DeliveryPlatform.Application.src.Features.Order.Get;
+using DeliveryPlatform.Application.src.Features.Order.GetDetails;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -27,5 +29,30 @@ public class OrdersController : ControllerBase
 
         var result = await _mediator.Send(command, cancellationToken);
         return StatusCode(StatusCodes.Status201Created, result);
+    }
+
+    [HttpGet("my-orders")]
+    public async Task<IActionResult> GetMyOrders(
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10,
+    CancellationToken cancellationToken = default)
+    {
+        var query = new GetMyOrdersQuery(pageNumber, pageSize);
+
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return Ok(result);
+    }
+
+    [HttpGet("{orderId}")]
+    public async Task<IActionResult> GetOrderDetails(
+        [FromRoute] Guid orderId,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetOrderDetailsQuery(orderId);
+
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return Ok(result);
     }
 }
