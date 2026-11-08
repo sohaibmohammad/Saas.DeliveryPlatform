@@ -49,7 +49,7 @@ public class CancelOrderHandler : IRequestHandler<CancelOrderCommand, bool>
         
         }, cancellationToken);
 
-        return true
+        return true;
 
 
     }

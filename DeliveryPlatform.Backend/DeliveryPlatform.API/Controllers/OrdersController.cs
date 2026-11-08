@@ -1,8 +1,10 @@
 using DeliveryPlatform.Application.src.Features.Order.Cancel;
 using DeliveryPlatform.Application.src.Features.Order.Create;
 using DeliveryPlatform.Application.src.Features.Order.Get;
+using DeliveryPlatform.Application.src.Features.Order.GetBusinessOrders;
 using DeliveryPlatform.Application.src.Features.Order.GetDetails;
 using DeliveryPlatform.Application.src.Features.Order.UpdateStaus;
+using DeliveryPlatform.Domain.src.Entity;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -83,5 +85,24 @@ public class OrdersController : ControllerBase
         await _mediator.Send(command, cancellationToken);
 
         return NoContent();
+    }
+    [HttpGet("business/{businessId:guid}")]
+    public async Task<IActionResult> GetBusinessOrders(
+    Guid businessId,
+    [FromQuery] int pageNumber = 1,
+    [FromQuery] int pageSize = 10,
+    [FromQuery] OrderStatus? status = null,
+    CancellationToken cancellationToken = default)
+    {
+        var query = new GetBusinessOrdersQuery(
+            businessId,
+            pageNumber,
+            pageSize,
+            status
+        );
+
+        var result = await _mediator.Send(query, cancellationToken);
+
+        return Ok(result);
     }
 }

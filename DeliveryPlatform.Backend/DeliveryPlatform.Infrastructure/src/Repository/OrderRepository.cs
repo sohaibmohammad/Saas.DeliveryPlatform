@@ -86,4 +86,33 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
         return await _context.Orders.Include(o => o.Business).Include(o=>o.Items)
             .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
     }
+
+    public async Task<PagedResult<Order>> GetByBusinessIdPagedAsync(
+    Guid businessId,
+    OrderStatus? status,
+    int pageNumber,
+    int pageSize,
+    CancellationToken cancellationToken)
+    {
+        var query = _context.Orders
+            .AsNoTracking().Where(o => o.BusinessId == businessId);
+
+        if (status.HasValue)
+        {
+            query.Where(o => o.Status == status.Value);
+        }
+
+        var totalCont = await query.CountAsync(cancellationToken);
+
+        var orders = await query.OrderByDescending(o => o.CreatedAt)
+            .ThenByDescending(o => o.Id).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+
+        return new PagedResult<Order>
+        {
+            Items = orders,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalCount = totalCont
+        };
+    }
 }
