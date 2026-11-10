@@ -12,5 +12,6 @@ public record GetBusinessOrdersQuery(
     Guid BusinessId,
     int PageNumber,
     int PageSize,
-    OrderStatus? Status
+    OrderStatus? Status,
+    Guid? BranchId = null
 ) : IRequest<PagedResult<OrderSummaryResponse>>;

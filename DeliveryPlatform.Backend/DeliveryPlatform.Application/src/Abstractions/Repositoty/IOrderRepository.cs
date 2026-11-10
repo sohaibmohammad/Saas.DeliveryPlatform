@@ -5,7 +5,7 @@ namespace DeliveryPlatform.Application.src.Abstractions.Repositoty;
 
 public interface IOrderRepository : IGenericRepository<Order>
 {
-    Task<PagedResult<Order>> GetByBusinessIdPagedAsync(Guid businessId, OrderStatus? status, int pageNumber, int pageSize, CancellationToken cancellationToken);
+    Task<PagedResult<Order>> GetByBusinessIdPagedAsync(Guid businessId, Guid? branchId, OrderStatus? status, int pageNumber, int pageSize, CancellationToken cancellationToken);
     Task<Order?> GetByIdAndUserIdAsync(Guid orderId, Guid userId, CancellationToken cancellationToken);
     Task<(List<Order> Orders, int TotalCount)> GetByUserIdAsync(Guid userId, int pageNumber, int pageSize, CancellationToken cancellationToken);
     Task<PagedResult<Order>> GetByUserIdPagedAsync(Guid userId, int pageNumber, int pageSize, CancellationToken cancellationToken);

@@ -89,30 +89,41 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
 
     public async Task<PagedResult<Order>> GetByBusinessIdPagedAsync(
     Guid businessId,
+    Guid? branchId,
     OrderStatus? status,
     int pageNumber,
     int pageSize,
     CancellationToken cancellationToken)
     {
         var query = _context.Orders
-            .AsNoTracking().Where(o => o.BusinessId == businessId);
+            .AsNoTracking()
+            .Where(o => o.BusinessId == businessId);
+
+        if (branchId.HasValue)
+        {
+            query = query.Where(o => o.BranchId == branchId.Value);
+        }
 
         if (status.HasValue)
         {
-            query.Where(o => o.Status == status.Value);
+            query = query.Where(o => o.Status == status.Value);
         }
 
-        var totalCont = await query.CountAsync(cancellationToken);
+        var totalCount = await query.CountAsync(cancellationToken);
 
-        var orders = await query.OrderByDescending(o => o.CreatedAt)
-            .ThenByDescending(o => o.Id).Skip((pageNumber - 1) * pageSize).Take(pageSize).ToListAsync();
+        var orders = await query
+            .OrderByDescending(o => o.CreatedAt)
+            .ThenByDescending(o => o.Id)
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync(cancellationToken);
 
         return new PagedResult<Order>
         {
             Items = orders,
             PageNumber = pageNumber,
             PageSize = pageSize,
-            TotalCount = totalCont
+            TotalCount = totalCount
         };
     }
 }

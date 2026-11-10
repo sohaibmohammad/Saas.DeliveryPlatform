@@ -88,17 +88,19 @@ public class OrdersController : ControllerBase
     }
     [HttpGet("business/{businessId:guid}")]
     public async Task<IActionResult> GetBusinessOrders(
-    Guid businessId,
+    [FromRoute] Guid businessId,
     [FromQuery] int pageNumber = 1,
     [FromQuery] int pageSize = 10,
     [FromQuery] OrderStatus? status = null,
+    [FromQuery] Guid? branchId = null,
     CancellationToken cancellationToken = default)
     {
         var query = new GetBusinessOrdersQuery(
             businessId,
             pageNumber,
             pageSize,
-            status
+            status,
+            branchId
         );
 
         var result = await _mediator.Send(query, cancellationToken);

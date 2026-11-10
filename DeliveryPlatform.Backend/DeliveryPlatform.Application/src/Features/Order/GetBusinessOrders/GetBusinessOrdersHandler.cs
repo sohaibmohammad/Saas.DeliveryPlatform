@@ -14,15 +14,18 @@ public class GetBusinessOrdersHandler : IRequestHandler<GetBusinessOrdersQuery, 
 {
     private readonly IOrderRepository _orderRepository;
     private readonly IBusinessRepository _businessRepository;
+    private readonly IBranchRepository _branchRepository;
     private readonly ICurrentUserService _currentUserService;
 
     public GetBusinessOrdersHandler(
         IOrderRepository orderRepository,
         IBusinessRepository businessRepository,
+        IBranchRepository branchRepository,
         ICurrentUserService currentUserService)
     {
         _orderRepository = orderRepository;
         _businessRepository = businessRepository;
+        _branchRepository = branchRepository;
         _currentUserService = currentUserService;
     }
 
@@ -30,18 +33,31 @@ public class GetBusinessOrdersHandler : IRequestHandler<GetBusinessOrdersQuery, 
     {
         var userId = _currentUserService.UserId;
 
-        var business =await _businessRepository.GetByUserIdAndBusinessIdAsync(userId, request.BusinessId, cancellationToken);
+        var business = await _businessRepository.GetByUserIdAndBusinessIdAsync(userId, request.BusinessId, cancellationToken);
 
         if (business == null)
             throw new UnauthorizedAccessException(
                 "You are not authorized to access this business.");
 
+        if (request.BranchId.HasValue)
+        {
+            var branch = await _branchRepository.GetByBusinessIdAndBranchIdAsync(
+                request.BusinessId,
+                request.BranchId.Value,
+                cancellationToken);
+
+            if (branch == null)
+                throw new UnauthorizedAccessException(
+                    "You are not authorized to access this branch.");
+        }
+
         var result = await _orderRepository.GetByBusinessIdPagedAsync(
-       request.BusinessId,
-       request.Status,
-       request.PageNumber,
-       request.PageSize,
-       cancellationToken);
+            request.BusinessId,
+            request.BranchId,
+            request.Status,
+            request.PageNumber,
+            request.PageSize,
+            cancellationToken);
 
         return new PagedResult<OrderSummaryResponse>
         {
