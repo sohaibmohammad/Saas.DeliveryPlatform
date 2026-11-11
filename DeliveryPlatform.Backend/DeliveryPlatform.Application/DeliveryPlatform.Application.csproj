@@ -17,4 +17,8 @@
     <ProjectReference Include="..\DeliveryPlatform.Domain\DeliveryPlatform.Domain.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="DeliveryPlatform.Test" />
+  </ItemGroup>
+
 </Project>

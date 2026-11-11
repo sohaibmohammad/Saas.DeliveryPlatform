@@ -15,8 +15,8 @@ public class MappingProfile : Profile
         CreateMap<Category, CategoryByIdResponse>();
 
         CreateMap<Product, ProductResponse>()
-            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : string.Empty));
+            .ForCtorParam(nameof(ProductResponse.CategoryName), opt => opt.MapFrom(src => src.Category == null ? string.Empty : src.Category.Name));
         CreateMap<Product, ProductByIdResponse>()
-            .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category != null ? src.Category.Name : string.Empty));
+            .ForCtorParam(nameof(ProductByIdResponse.CategoryName), opt => opt.MapFrom(src => src.Category == null ? string.Empty : src.Category.Name));
     }
 }

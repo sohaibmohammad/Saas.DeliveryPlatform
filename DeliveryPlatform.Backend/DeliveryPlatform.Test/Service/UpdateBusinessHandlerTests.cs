@@ -35,7 +35,7 @@ public class UpdateBusinessHandlerTests
         };
 
         _businessRepositoryMock
-            .Setup(r => r.GetByIdAsync(businessId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByUserIdAndBusinessIdAsync(userId, businessId, It.IsAny<CancellationToken>()))
             .ReturnsAsync(business);
         _unitOfWorkMock
             .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
@@ -55,17 +55,51 @@ public class UpdateBusinessHandlerTests
         Assert.Equal("NewName", business.Name);
         Assert.Equal("NewDesc", business.Description);
         Assert.Equal(BusinessType.Restaurant, business.BusinessType);
-        Assert.False(business.IsActive);
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
-    public async Task Handle_ShouldThrow_WhenBusinessNotFound()
+    public async Task Handle_ShouldTrimNameAndClearWhitespaceDescription()
+    {
+        var userId = Guid.NewGuid();
+        var businessId = Guid.NewGuid();
+        var business = new Business
+        {
+            Id = businessId,
+            UserId = userId,
+            Name = "OldName",
+            Description = "OldDesc",
+            BusinessType = BusinessType.Grocery
+        };
+
+        _businessRepositoryMock
+            .Setup(r => r.GetByUserIdAndBusinessIdAsync(userId, businessId, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(business);
+        _unitOfWorkMock
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        var command = new UpdateBusinessCommand(
+            businessId,
+            "  NewName  ",
+            "   ",
+            BusinessType.Restaurant,
+            true,
+            userId);
+
+        await _handler.Handle(command, CancellationToken.None);
+
+        Assert.Equal("NewName", business.Name);
+        Assert.Null(business.Description);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldThrow_WhenBusinessNotFoundOrNotOwned()
     {
         var businessId = Guid.NewGuid();
 
         _businessRepositoryMock
-            .Setup(r => r.GetByIdAsync(businessId, It.IsAny<CancellationToken>()))
+            .Setup(r => r.GetByUserIdAndBusinessIdAsync(It.IsAny<Guid>(), businessId, It.IsAny<CancellationToken>()))
             .ReturnsAsync((Business?)null);
 
         var command = new UpdateBusinessCommand(
@@ -76,35 +110,7 @@ public class UpdateBusinessHandlerTests
             true,
             Guid.NewGuid());
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _handler.Handle(command, CancellationToken.None));
-        _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
-    }
-
-    [Fact]
-    public async Task Handle_ShouldThrowUnauthorized_WhenUserIsNotOwner()
-    {
-        var businessId = Guid.NewGuid();
-        var business = new Business
-        {
-            Id = businessId,
-            UserId = Guid.NewGuid(),
-            Name = "Shop",
-            BusinessType = BusinessType.Restaurant
-        };
-
-        _businessRepositoryMock
-            .Setup(r => r.GetByIdAsync(businessId, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(business);
-
-        var command = new UpdateBusinessCommand(
-            businessId,
-            "NewName",
-            null,
-            BusinessType.Restaurant,
-            true,
-            Guid.NewGuid());
-
-        await Assert.ThrowsAsync<UnauthorizedAccessException>(() => _handler.Handle(command, CancellationToken.None));
+        await Assert.ThrowsAsync<KeyNotFoundException>(() => _handler.Handle(command, CancellationToken.None));
         _unitOfWorkMock.Verify(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()), Times.Never);
     }
 
@@ -119,7 +125,26 @@ public class UpdateBusinessHandlerTests
             true,
             Guid.NewGuid());
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _handler.Handle(command, CancellationToken.None));
-        _businessRepositoryMock.Verify(r => r.GetByIdAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()), Times.Never);
+        await Assert.ThrowsAsync<ArgumentException>(() => _handler.Handle(command, CancellationToken.None));
+        _businessRepositoryMock.Verify(
+            r => r.GetByUserIdAndBusinessIdAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldThrow_WhenBusinessTypeIsInvalid()
+    {
+        var command = new UpdateBusinessCommand(
+            Guid.NewGuid(),
+            "NewName",
+            null,
+            (BusinessType)999,
+            true,
+            Guid.NewGuid());
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _handler.Handle(command, CancellationToken.None));
+        _businessRepositoryMock.Verify(
+            r => r.GetByUserIdAndBusinessIdAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
     }
 }

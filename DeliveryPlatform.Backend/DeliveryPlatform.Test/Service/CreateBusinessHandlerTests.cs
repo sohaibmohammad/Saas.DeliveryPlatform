@@ -43,4 +43,39 @@ public class CreateBusinessHandlerTests
 
         await Assert.ThrowsAsync<InvalidOperationException>(() => _handler.Handle(command, CancellationToken.None));
     }
+
+    [Fact]
+    public async Task Handle_ShouldThrow_WhenBusinessTypeIsInvalid()
+    {
+        var command = new CreateBusinessCommand("TestShop", "Desc", (BusinessType)999, Guid.NewGuid());
+
+        await Assert.ThrowsAsync<ArgumentException>(() => _handler.Handle(command, CancellationToken.None));
+        _businessRepositoryMock.Verify(
+            r => r.AddAsync(It.IsAny<Business>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task Handle_ShouldTrimNameAndClearWhitespaceDescription()
+    {
+        var userId = Guid.NewGuid();
+        Business? createdBusiness = null;
+        var command = new CreateBusinessCommand("  TestShop  ", "   ", BusinessType.Restaurant, userId);
+
+        _businessRepositoryMock
+            .Setup(r => r.AddAsync(It.IsAny<Business>(), It.IsAny<CancellationToken>()))
+            .Callback<Business, CancellationToken>((business, _) => createdBusiness = business)
+            .Returns(Task.CompletedTask);
+        _unitOfWorkMock
+            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(1);
+
+        await _handler.Handle(command, CancellationToken.None);
+
+        Assert.NotNull(createdBusiness);
+        Assert.Equal("TestShop", createdBusiness!.Name);
+        Assert.Null(createdBusiness.Description);
+        Assert.True(createdBusiness.IsActive);
+        Assert.Equal(userId, createdBusiness.UserId);
+    }
 }
