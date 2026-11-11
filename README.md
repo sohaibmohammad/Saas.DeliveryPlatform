@@ -55,7 +55,13 @@ The project follows Clean Architecture and uses CQRS with MediatR. It is built a
 - Product prices, subtotal, and total are calculated server-side from database data; delivery fee is currently zero pending delivery rules
 - Stock is reserved for each ordered product inside a transaction
 - Order items snapshot product name, unit price, quantity, and line total
-- Returns order ID, order number, monetary breakdown, and status
+- Customers can list their own orders and view order details
+- Customers can cancel their own pending orders; cancellation releases reserved stock
+- Business owners can list orders for their business, optionally filtered by status and branch
+- Business owners can advance orders through the status workflow:
+  `Pending -> Confirmed -> Preparing -> ReadyForPickup -> OutForDelivery -> Delivered`
+- Status updates verify business ownership and reject skipped, backward, same-state, or terminal-state changes
+- Delivering an order commits its reserved stock inside a transaction
 
 ### Platform foundation
 - Clean Architecture with API, Application, Domain, and Infrastructure layers
@@ -351,6 +357,11 @@ Reserve stock body:
 | Method | Route | Auth | Description |
 | --- | --- | --- | --- |
 | `POST` | `/api/orders` | Yes | Create an order for a branch |
+| `GET` | `/api/orders/my-orders?pageNumber=1&pageSize=10` | Yes | List the current user's orders |
+| `GET` | `/api/orders/{orderId}` | Yes | Get order details for the current user |
+| `POST` | `/api/orders/{orderId}/cancel` | Yes | Cancel the current user's pending order |
+| `PUT` | `/api/orders/{orderId}/status` | Yes | Update an order's status as the owning business |
+| `GET` | `/api/orders/business/{businessId}?pageNumber=1&pageSize=10&status=&branchId=` | Yes | List orders for an owned business |
 
 Create order body:
 
@@ -368,6 +379,24 @@ Create order body:
 ```
 
 The client sends only product IDs and quantities. Product prices, subtotal, delivery fee, and total are resolved or calculated by the handler from database data. Response: `201 Created` with `orderId`, `orderNumber`, `subtotal`, `deliveryFee`, `total`, and `status`.
+
+Update order status body:
+
+```json
+{
+  "status": 1
+}
+```
+
+Order status values: `0` Pending, `1` Confirmed, `2` Preparing, `3` ReadyForPickup, `4` OutForDelivery, `5` Delivered, `6` Cancelled. Response: `204 No Content`.
+
+Allowed business status transitions:
+
+```text
+Pending -> Confirmed -> Preparing -> ReadyForPickup -> OutForDelivery -> Delivered
+```
+
+The status endpoint rejects invalid transitions, updates to terminal orders, and cancellation requests. Cancellation is handled by the dedicated cancel endpoint, which only allows pending orders and releases their reserved stock.
 
 ## Request Examples
 
@@ -504,7 +533,7 @@ Run the test suite:
 dotnet test DeliveryPlatform.Backend.slnx
 ```
 
-The `DeliveryPlatform.Test` project contains xUnit tests using Moq for business handlers and repository contracts.
+The `DeliveryPlatform.Test` project contains xUnit tests using Moq for handlers, validators, mappings, and repository contracts. Coverage includes authentication, business/branch/category/product/inventory flows, and the order lifecycle, including status transitions and cancellation.
 
 ## Project Status
 
@@ -517,15 +546,17 @@ Implemented:
 - Branch create/update/read with ownership checks and admin read access
 - Category and product create/update/read with ownership checks
 - Inventory set, reserve, and per-branch listing
-- Initial order creation with server-side pricing and stock reservation
+- Order creation with server-side pricing and stock reservation
+- Customer order listing, order details, and pending-order cancellation
+- Business order listing with status/branch filters
+- Order status lifecycle with ownership checks, transition validation, and stock commit on delivery
 - Domain model for businesses, branches, categories, products, inventory, and orders
 - EF Core migrations and repository/Unit of Work infrastructure
 - Docker Compose for API, SQL Server, and Redis
 
 Planned or in progress:
 
-- Cart and order listing/status lifecycle
-- Payment and delivery workflows
+- Cart, payment, and delivery workflows
 - Driver/captain assignment and location handling
 - Integration tests and automated database migration on startup
 - Frontend client
