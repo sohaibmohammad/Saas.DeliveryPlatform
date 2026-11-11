@@ -3,7 +3,7 @@ using DeliveryPlatform.Application.src.Features.Order.Create;
 using DeliveryPlatform.Application.src.Features.Order.Get;
 using DeliveryPlatform.Application.src.Features.Order.GetBusinessOrders;
 using DeliveryPlatform.Application.src.Features.Order.GetDetails;
-using DeliveryPlatform.Application.src.Features.Order.UpdateStaus;
+using DeliveryPlatform.Application.src.Features.Order.UpdateStatus;
 using DeliveryPlatform.Domain.src.Entity;
 using MediatR;
 using Microsoft.AspNetCore.Authorization;
@@ -73,13 +73,13 @@ public class OrdersController : ControllerBase
     }
     [HttpPut("{orderId:guid}/status")]
     public async Task<IActionResult> UpdateOrderStatus(
-    Guid orderId,
-    [FromBody] UpdateOrderStatusRequest request,
-    CancellationToken cancellationToken)
+        [FromRoute] Guid orderId,
+        [FromBody] UpdateOrderStatusRequest request,
+        CancellationToken cancellationToken)
     {
-        var command = new UpdaeOrderStatusCommand(
+        var command = new UpdateOrderStatusCommand(
             orderId,
-            request.Statuss
+            request.Status
         );
 
         await _mediator.Send(command, cancellationToken);

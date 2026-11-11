@@ -81,9 +81,11 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
         return await _context.Orders.Include(o=>o.Items)
              .FirstOrDefaultAsync(o => o.Id == orderId && o.UserId == userId, cancellationToken);
     }
-    public async Task <Order?> GetOrderForSatusUpdateAsync(Guid orderId,CancellationToken cancellationToken) {
-
-        return await _context.Orders.Include(o => o.Business).Include(o=>o.Items)
+    public async Task<Order?> GetOrderForStatusUpdateAsync(Guid orderId, CancellationToken cancellationToken)
+    {
+        return await _context.Orders
+            .Include(o => o.Business)
+            .Include(o => o.Items)
             .FirstOrDefaultAsync(o => o.Id == orderId, cancellationToken);
     }
 

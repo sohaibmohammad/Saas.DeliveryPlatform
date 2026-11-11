@@ -11,5 +11,5 @@ public interface IOrderRepository : IGenericRepository<Order>
     Task<PagedResult<Order>> GetByUserIdPagedAsync(Guid userId, int pageNumber, int pageSize, CancellationToken cancellationToken);
     Task<Order?> GetForCancellationAsync(Guid orderId, Guid userId, CancellationToken cancellationToken);
     Task<Order?> GetOrderDetailsAsync(Guid orderId, Guid userId, CancellationToken cancellationToken);
-    Task<Order?> GetOrderForSatusUpdateAsync(Guid orderId, CancellationToken cancellationToken);
+    Task<Order?> GetOrderForStatusUpdateAsync(Guid orderId, CancellationToken cancellationToken);
 }

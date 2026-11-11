@@ -2,13 +2,10 @@
 using DeliveryPlatform.Application.src.Abstractions.Security;
 using DeliveryPlatform.Domain.src.Entity;
 using MediatR;
-using System;
-using System.Collections.Generic;
-using System.Text;
 
-namespace DeliveryPlatform.Application.src.Features.Order.UpdateStaus;
+namespace DeliveryPlatform.Application.src.Features.Order.UpdateStatus;
 
-public class UpdateOrderStatusHandler : IRequestHandler<UpdaeOrderStatusCommand, bool>
+public class UpdateOrderStatusHandler : IRequestHandler<UpdateOrderStatusCommand, bool>
 {
     private readonly IOrderRepository _orderRepository;
     private readonly ICurrentUserService _currentUserService;
@@ -25,21 +22,28 @@ public class UpdateOrderStatusHandler : IRequestHandler<UpdaeOrderStatusCommand,
         _currentUserService = currentUserService;
         _unitOfWork = unitOfWork;
         _inventoryRepository = inventoryRepository;
-        
     }
 
-    public async Task<bool> Handle(UpdaeOrderStatusCommand request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(UpdateOrderStatusCommand request, CancellationToken cancellationToken)
     {
         if (request.OrderId == Guid.Empty)
             throw new InvalidOperationException("Invalid order ID.");
 
-        var order = await _orderRepository.GetOrderForSatusUpdateAsync(request.OrderId,cancellationToken);
+        var order = await _orderRepository.GetOrderForStatusUpdateAsync(
+            request.OrderId,
+            cancellationToken);
+
         if (order is null)
-            throw new KeyNotFoundException("Order not found");
+            throw new KeyNotFoundException("Order not found.");
+
         var userId = _currentUserService.UserId;
-        if (order.Business.UserId != userId)
+        if (order.Business?.UserId != userId)
             throw new UnauthorizedAccessException(
                 "You are not authorized to update this order.");
+
+        if (order.Status is OrderStatus.Delivered or OrderStatus.Cancelled)
+            throw new InvalidOperationException(
+                $"Order is already {order.Status} and cannot be updated.");
 
         var isValidTransition = (order.Status, request.Status) switch
         {
@@ -55,9 +59,9 @@ public class UpdateOrderStatusHandler : IRequestHandler<UpdaeOrderStatusCommand,
             throw new InvalidOperationException(
                 $"Cannot change order status from {order.Status} to {request.Status}.");
 
-        await _unitOfWork.ExecuteInTransactionAsync(async ct =>
+        if (request.Status == OrderStatus.Delivered)
         {
-            if (request.Status == OrderStatus.Delivered)
+            await _unitOfWork.ExecuteInTransactionAsync(async ct =>
             {
                 foreach (var item in order.Items)
                 {
@@ -73,13 +77,22 @@ public class UpdateOrderStatusHandler : IRequestHandler<UpdaeOrderStatusCommand,
                             $"Failed to commit stock for product {item.ProductId}.");
                     }
                 }
-            }
 
-            order.Status = request.Status;
-            order.UpdatedAt = DateTime.UtcNow;
-
-        }, cancellationToken);
+                ApplyStatus(order, request.Status);
+            }, cancellationToken);
+        }
+        else
+        {
+            ApplyStatus(order, request.Status);
+            await _unitOfWork.SaveChangesAsync(cancellationToken);
+        }
 
         return true;
+    }
+
+    private static void ApplyStatus(DeliveryPlatform.Domain.src.Entity.Order order, OrderStatus status)
+    {
+        order.Status = status;
+        order.UpdatedAt = DateTime.UtcNow;
     }
 }
