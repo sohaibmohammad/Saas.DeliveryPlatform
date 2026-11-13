@@ -25,6 +25,8 @@ public class User
 
     public ICollection<Order> Orders { get; set; } = new List<Order>();
 
+    public ICollection<OrderStatusHistory> OrderStatusChanges { get; set; }
+    = new List<OrderStatusHistory>();
 
     public ICollection<ExternalLogins> ExternalLogins { get; set; }
     = new List<ExternalLogins>();

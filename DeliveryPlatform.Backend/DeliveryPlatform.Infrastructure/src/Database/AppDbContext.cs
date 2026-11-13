@@ -13,7 +13,7 @@ namespace DeliveryPlatform.Infrastructure.src.Database
         }
         public DbSet<UserRefreshToken> UserRefreshTokens { get; set; }
         public DbSet<Order> Orders { get; set; } = null!;
-
+        public DbSet<OrderStatusHistory> OrderStatusHistories { get; set; }
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Business> Businesses { get; set; } = null!;
         public DbSet<Product> Products { get; set; } = null!;

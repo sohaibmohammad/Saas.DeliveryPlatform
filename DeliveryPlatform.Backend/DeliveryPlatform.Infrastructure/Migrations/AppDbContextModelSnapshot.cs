@@ -282,6 +282,40 @@ namespace DeliveryPlatform.Infrastructure.Migrations
                     b.ToTable("OrderItems");
                 });
 
+            modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.OrderStatusHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("ChangedBy")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("NewStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<Guid>("OrderId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("PreviousStatus")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ChangedBy");
+
+                    b.HasIndex("OrderId", "ChangedAt");
+
+                    b.ToTable("OrderStatusHistories");
+                });
+
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Product", b =>
                 {
                     b.Property<Guid>("Id")
@@ -502,6 +536,25 @@ namespace DeliveryPlatform.Infrastructure.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.OrderStatusHistory", b =>
+                {
+                    b.HasOne("DeliveryPlatform.Domain.src.Entity.User", "User")
+                        .WithMany("OrderStatusChanges")
+                        .HasForeignKey("ChangedBy")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("DeliveryPlatform.Domain.src.Entity.Order", "Order")
+                        .WithMany("StatusHistory")
+                        .HasForeignKey("OrderId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Order");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Product", b =>
                 {
                     b.HasOne("DeliveryPlatform.Domain.src.Entity.Business", "Business")
@@ -559,6 +612,8 @@ namespace DeliveryPlatform.Infrastructure.Migrations
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Order", b =>
                 {
                     b.Navigation("Items");
+
+                    b.Navigation("StatusHistory");
                 });
 
             modelBuilder.Entity("DeliveryPlatform.Domain.src.Entity.Product", b =>
@@ -573,6 +628,8 @@ namespace DeliveryPlatform.Infrastructure.Migrations
                     b.Navigation("Businesses");
 
                     b.Navigation("ExternalLogins");
+
+                    b.Navigation("OrderStatusChanges");
 
                     b.Navigation("Orders");
                 });
