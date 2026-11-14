@@ -1,5 +1,8 @@
-﻿using DeliveryPlatform.API.Middleware;
+﻿using DeliveryPlatform.API.Hubs;
+using DeliveryPlatform.API.Middleware;
 using DeliveryPlatform.API.Options;
+using DeliveryPlatform.API.Services.Notifications;
+using DeliveryPlatform.Application.src.Abstractions.Notifications;
 using DeliveryPlatform.Application.src.Abstractions.Repositoty;
 using DeliveryPlatform.Application.src.Abstractions.Security;
 using DeliveryPlatform.Application.src.Common.Behaviors;
@@ -150,7 +153,8 @@ builder.Services.AddScoped<ITokenRevocationService, RedisTokenRevocationService>
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, CurrentUserService>();
-
+builder.Services.AddSignalR();
+builder.Services.AddScoped<IOrderNotificationService,SignalROrderNotificationService>();
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -159,10 +163,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "DeliveryPlatform API v1"); });
     app.MapOpenApi();
 }
-
 app.UseMiddleware<ExceptionHandlingMiddlware>();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.MapHub<OrderHub>("/hubs/orders");
+
 app.Run();
