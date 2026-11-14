@@ -62,6 +62,8 @@ The project follows Clean Architecture and uses CQRS with MediatR. It is built a
   `Pending -> Confirmed -> Preparing -> ReadyForPickup -> OutForDelivery -> Delivered`
 - Status updates verify business ownership and reject skipped, backward, same-state, or terminal-state changes
 - Delivering an order commits its reserved stock inside a transaction
+- Every business-initiated status change is recorded in an order status history (previous status, new status, changed-by user, timestamp)
+- Status changes are pushed to the customer in real time over a SignalR hub
 
 ### Platform foundation
 - Clean Architecture with API, Application, Domain, and Infrastructure layers
@@ -70,6 +72,7 @@ The project follows Clean Architecture and uses CQRS with MediatR. It is built a
 - Repository pattern and Unit of Work
 - Centralized exception handling with consistent JSON error responses
 - Swagger/OpenAPI in the Development environment
+- SignalR hub for authenticated real-time order status notifications
 - Docker and Docker Compose support for the API, SQL Server, and Redis
 
 ## Architecture
@@ -113,6 +116,7 @@ API ──────────► Application ──► Domain
 | Authentication | JWT Bearer, Google.Apis.Auth |
 | Testing | xUnit, Moq |
 | API docs | Swagger / OpenAPI |
+| Real-time | SignalR |
 | Containers | Docker, Docker Compose |
 
 ## Domain Model
@@ -127,6 +131,7 @@ API ──────────► Application ──► Domain
 | `Inventory` | Quantity and reserved quantity for a product at a branch |
 | `Order` | Customer order for a branch with number, status, totals, and delivery address |
 | `OrderItem` | Line item snapshot of a product (name, unit price, quantity, total) |
+| `OrderStatusHistory` | Audit record of an order status transition (previous/new status, changed by, timestamp) |
 | `ExternalLogins` | Provider link for external authentication (Google) |
 | `UserRefreshToken` | Hashed refresh token, expiry, revocation, and replacement chain |
 
@@ -361,6 +366,7 @@ Reserve stock body:
 | `GET` | `/api/orders/{orderId}` | Yes | Get order details for the current user |
 | `POST` | `/api/orders/{orderId}/cancel` | Yes | Cancel the current user's pending order |
 | `PUT` | `/api/orders/{orderId}/status` | Yes | Update an order's status as the owning business |
+| `GET` | `/api/orders/{orderId}/status-history` | Yes | Get the status history for the current user's order or an owned business order |
 | `GET` | `/api/orders/business/{businessId}?pageNumber=1&pageSize=10&status=&branchId=` | Yes | List orders for an owned business |
 
 Create order body:
@@ -397,6 +403,40 @@ Pending -> Confirmed -> Preparing -> ReadyForPickup -> OutForDelivery -> Deliver
 ```
 
 The status endpoint rejects invalid transitions, updates to terminal orders, and cancellation requests. Cancellation is handled by the dedicated cancel endpoint, which only allows pending orders and releases their reserved stock.
+
+Order status history:
+
+Each business-initiated status change appends an `OrderStatusHistory` row inside the same transaction as the status update. The history endpoint returns entries ordered by `ChangedAt`:
+
+```json
+[
+  {
+    "previousStatus": 0,
+    "newStatus": 1,
+    "changedBy": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+    "changedAt": "2026-11-13T10:25:00Z"
+  }
+]
+```
+
+The endpoint is available to the order's customer and to the owner of its business.
+
+### Real-time order notifications
+
+Order status changes are pushed to the customer over SignalR.
+
+- Hub route: `/hubs/orders` (requires JWT authentication)
+- On connect, the authenticated user is added to the `user-{userId}` group
+- Event: `OrderStatusChanged`
+- Payload:
+
+```json
+{
+  "orderId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
+  "newStatus": "Confirmed",
+  "changedAt": "2026-11-13T10:25:00Z"
+}
+```
 
 ## Request Examples
 
@@ -550,6 +590,8 @@ Implemented:
 - Customer order listing, order details, and pending-order cancellation
 - Business order listing with status/branch filters
 - Order status lifecycle with ownership checks, transition validation, and stock commit on delivery
+- Order status history tracking and retrieval for customers and business owners
+- Real-time order status notifications over SignalR
 - Domain model for businesses, branches, categories, products, inventory, and orders
 - EF Core migrations and repository/Unit of Work infrastructure
 - Docker Compose for API, SQL Server, and Redis
@@ -565,5 +607,6 @@ Planned or in progress:
 
 - HTTP requests are redirected to HTTPS by the API; use the HTTPS profile locally or configure a reverse proxy in production.
 - Swagger is enabled only in the Development environment.
+- The SignalR hub at `/hubs/orders` is authenticated; clients must send the JWT access token when connecting.
 - The default JWT access-token lifetime is 30 minutes and the refresh-token lifetime is 7 days.
 - Keep `appsettings.json` free of production secrets. Prefer environment variables or a secrets manager.

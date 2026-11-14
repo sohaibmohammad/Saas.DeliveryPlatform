@@ -3,6 +3,7 @@ using DeliveryPlatform.Application.src.Features.Order.Create;
 using DeliveryPlatform.Application.src.Features.Order.Get;
 using DeliveryPlatform.Application.src.Features.Order.GetBusinessOrders;
 using DeliveryPlatform.Application.src.Features.Order.GetDetails;
+using DeliveryPlatform.Application.src.Features.Order.GetStatusHistory;
 using DeliveryPlatform.Application.src.Features.Order.UpdateStatus;
 using DeliveryPlatform.Domain.src.Entity;
 using MediatR;
@@ -104,6 +105,18 @@ public class OrdersController : ControllerBase
         );
 
         var result = await _mediator.Send(query, cancellationToken);
+
+        return Ok(result);
+    }
+
+    [HttpGet("{orderId:guid}/status-history")]
+    public async Task<IActionResult> GetOrderStatusHistory(
+    Guid orderId,
+    CancellationToken cancellationToken)
+    {
+        var result = await _mediator.Send(
+            new GetOrderStatusHistoryQuery(orderId),
+            cancellationToken);
 
         return Ok(result);
     }

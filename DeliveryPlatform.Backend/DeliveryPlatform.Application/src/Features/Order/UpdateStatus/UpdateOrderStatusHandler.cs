@@ -1,4 +1,5 @@
-﻿using DeliveryPlatform.Application.src.Abstractions.Repositoty;
+﻿using DeliveryPlatform.Application.src.Abstractions.Notifications;
+using DeliveryPlatform.Application.src.Abstractions.Repositoty;
 using DeliveryPlatform.Application.src.Abstractions.Security;
 using DeliveryPlatform.Domain.src.Entity;
 using MediatR;
@@ -12,7 +13,10 @@ public class UpdateOrderStatusHandler : IRequestHandler<UpdateOrderStatusCommand
     private readonly IUnitOfWork _unitOfWork;
     private readonly IInventoryRepository _inventoryRepository;
 
+    private readonly IOrderNotificationService _notificationService;
+
     public UpdateOrderStatusHandler(
+        IOrderNotificationService notificationService,
         IInventoryRepository inventoryRepository,
         IOrderRepository orderRepository,
         ICurrentUserService currentUserService,
@@ -22,6 +26,8 @@ public class UpdateOrderStatusHandler : IRequestHandler<UpdateOrderStatusCommand
         _currentUserService = currentUserService;
         _unitOfWork = unitOfWork;
         _inventoryRepository = inventoryRepository;
+        _notificationService = notificationService;
+
     }
 
     public async Task<bool> Handle(UpdateOrderStatusCommand request, CancellationToken cancellationToken)
@@ -101,6 +107,8 @@ public class UpdateOrderStatusHandler : IRequestHandler<UpdateOrderStatusCommand
                     ChangedAt = DateTime.UtcNow
                 });
             }, cancellationToken);
+
+        await _notificationService.NotifyOrderStatusChangedAsync(order.UserId, order.Id,request.Status.ToString());
   
 
         return true;

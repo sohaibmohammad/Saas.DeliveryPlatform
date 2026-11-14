@@ -161,4 +161,30 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
 
         return affectedRows == 1;
     }
+
+
+    public async Task<Order?> GetOrderWithStatusHistoryForUserAsync(
+    Guid orderId,
+    Guid userId,
+    CancellationToken cancellationToken)
+    {
+        return await _context.Orders
+            .AsNoTracking()
+            .Include(o => o.StatusHistory)
+            .Include(o => o.Business)
+            .FirstOrDefaultAsync(
+                o => o.Id == orderId &&
+                     (o.UserId == userId || o.Business.UserId == userId),
+                cancellationToken);
+    }
+    public async Task<List<OrderStatusHistory>> GetOrderStatusHistoryAsync(
+    Guid orderId,
+    CancellationToken cancellationToken)
+    {
+        return await _context.OrderStatusHistories
+            .AsNoTracking()
+            .Where(h => h.OrderId == orderId)
+            .OrderBy(h => h.ChangedAt)
+            .ToListAsync(cancellationToken);
+    }
 }
