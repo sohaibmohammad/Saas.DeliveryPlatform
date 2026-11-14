@@ -128,4 +128,37 @@ public class OrderRepository : GenericRepository<Order>, IOrderRepository
             TotalCount = totalCount
         };
     }
+    public void AddStatusHistory(OrderStatusHistory history)
+    {
+        _context.OrderStatusHistories.Add(history);
+    }
+
+    public async Task<bool> TryUpdateStatusAsync(
+    Guid orderId,
+    OrderStatus expectedStatus,
+    OrderStatus newStatus,
+    CancellationToken cancellationToken)
+    {
+        var query = _context.Orders
+      .Where(o => o.Id == orderId &&
+                  o.Status == expectedStatus);
+
+        var count = await query.CountAsync(cancellationToken);
+
+        Console.WriteLine($"Matching Rows: {count}");
+        Console.WriteLine($"OrderId: {orderId}");
+        Console.WriteLine($"Expected Status: {(int)expectedStatus}");
+
+        var affectedRows = await _context.Orders
+            .Where(o =>
+                o.Id == orderId &&
+                o.Status == expectedStatus)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(o => o.Status, newStatus)
+                    .SetProperty(o => o.UpdatedAt, DateTime.UtcNow),
+                cancellationToken);
+
+        return affectedRows == 1;
+    }
 }

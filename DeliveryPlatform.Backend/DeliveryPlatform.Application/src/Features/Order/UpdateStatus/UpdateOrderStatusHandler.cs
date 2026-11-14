@@ -45,6 +45,8 @@ public class UpdateOrderStatusHandler : IRequestHandler<UpdateOrderStatusCommand
             throw new InvalidOperationException(
                 $"Order is already {order.Status} and cannot be updated.");
 
+        var previousStatus = order.Status;
+
         var isValidTransition = (order.Status, request.Status) switch
         {
             (OrderStatus.Pending, OrderStatus.Confirmed) => true,
@@ -59,40 +61,49 @@ public class UpdateOrderStatusHandler : IRequestHandler<UpdateOrderStatusCommand
             throw new InvalidOperationException(
                 $"Cannot change order status from {order.Status} to {request.Status}.");
 
-        if (request.Status == OrderStatus.Delivered)
-        {
+        
             await _unitOfWork.ExecuteInTransactionAsync(async ct =>
             {
-                foreach (var item in order.Items)
-                {
-                    var committed = await _inventoryRepository.CommitReservedStockAsync(
-                        order.BranchId,
-                        item.ProductId,
-                        item.Quantity,
-                        ct);
 
-                    if (!committed)
+                var updated = await _orderRepository.TryUpdateStatusAsync(
+      order.Id,
+      previousStatus,
+      request.Status,
+      ct);
+
+                if (!updated)
+                    throw new InvalidOperationException(
+                        "Order status was changed by another request.");
+
+                // 2. Commit reserved stock only when order is delivered
+                if (request.Status == OrderStatus.Delivered)
+                {
+                    foreach (var item in order.Items)
                     {
-                        throw new InvalidOperationException(
-                            $"Failed to commit stock for product {item.ProductId}.");
+                        var committed = await _inventoryRepository.CommitReservedStockAsync(
+                            order.BranchId,
+                            item.ProductId,
+                            item.Quantity,
+                            ct);
+
+                        if (!committed)
+                            throw new InvalidOperationException(
+                                $"Failed to commit stock for product {item.ProductId}.");
                     }
                 }
-
-                ApplyStatus(order, request.Status);
+                _orderRepository.AddStatusHistory(new OrderStatusHistory
+                {
+                    Id = Guid.NewGuid(),
+                    OrderId = order.Id,
+                    PreviousStatus = previousStatus,
+                    NewStatus = request.Status,
+                    ChangedBy = userId,
+                    ChangedAt = DateTime.UtcNow
+                });
             }, cancellationToken);
-        }
-        else
-        {
-            ApplyStatus(order, request.Status);
-            await _unitOfWork.SaveChangesAsync(cancellationToken);
-        }
+  
 
         return true;
     }
 
-    private static void ApplyStatus(DeliveryPlatform.Domain.src.Entity.Order order, OrderStatus status)
-    {
-        order.Status = status;
-        order.UpdatedAt = DateTime.UtcNow;
-    }
 }

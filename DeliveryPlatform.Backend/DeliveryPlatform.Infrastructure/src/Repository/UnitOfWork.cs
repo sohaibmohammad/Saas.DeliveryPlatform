@@ -1,5 +1,6 @@
 ﻿using DeliveryPlatform.Application.src.Abstractions.Repositoty;
 using DeliveryPlatform.Infrastructure.src.Database;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -16,7 +17,7 @@ public class UnitOfWork : IUnitOfWork
 
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-    return await _context.SaveChangesAsync(cancellationToken);
+        return await _context.SaveChangesAsync(cancellationToken);
     }
 
 
@@ -36,10 +37,26 @@ public class UnitOfWork : IUnitOfWork
 
             await transaction.CommitAsync(cancellationToken);
         }
-        catch
+        catch (DbUpdateConcurrencyException ex)
         {
+            foreach (var entry in ex.Entries)
+            {
+                Console.WriteLine($"Entity: {entry.Metadata.Name}");
+                Console.WriteLine($"State: {entry.State}");
+
+                foreach (var property in entry.Properties)
+                {
+                    Console.WriteLine(
+                        $"{property.Metadata.Name}: " +
+                        $"Original={property.OriginalValue}, " +
+                        $"Current={property.CurrentValue}");
+                }
+            }
+
             await transaction.RollbackAsync(CancellationToken.None);
             throw;
         }
+    } 
+
+
     }
-}
