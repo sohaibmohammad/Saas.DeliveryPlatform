@@ -1,3 +1,4 @@
+using DeliveryPlatform.Application.src.Abstractions.Notifications;
 using DeliveryPlatform.Application.src.Abstractions.Repositoty;
 using DeliveryPlatform.Application.src.Abstractions.Security;
 using DeliveryPlatform.Application.src.Features.Order.UpdateStatus;
@@ -13,6 +14,7 @@ public class UpdateOrderStatusHandlerTests
     private readonly Mock<IInventoryRepository> _inventoryRepositoryMock;
     private readonly Mock<ICurrentUserService> _currentUserServiceMock;
     private readonly Mock<IUnitOfWork> _unitOfWorkMock;
+    private readonly Mock<IOrderNotificationService> _notificationServiceMock;
     private readonly UpdateOrderStatusHandler _handler;
 
     public UpdateOrderStatusHandlerTests()
@@ -21,15 +23,20 @@ public class UpdateOrderStatusHandlerTests
         _inventoryRepositoryMock = new Mock<IInventoryRepository>();
         _currentUserServiceMock = new Mock<ICurrentUserService>();
         _unitOfWorkMock = new Mock<IUnitOfWork>();
+        _notificationServiceMock = new Mock<IOrderNotificationService>();
 
         _unitOfWorkMock
             .Setup(u => u.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
             .Returns((Func<CancellationToken, Task> operation, CancellationToken ct) => operation(ct));
-        _unitOfWorkMock
-            .Setup(u => u.SaveChangesAsync(It.IsAny<CancellationToken>()))
-            .ReturnsAsync(1);
+        _orderRepositoryMock
+            .Setup(r => r.TryUpdateStatusAsync(It.IsAny<Guid>(), It.IsAny<OrderStatus>(), It.IsAny<OrderStatus>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+        _notificationServiceMock
+            .Setup(n => n.NotifyOrderStatusChangedAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()))
+            .Returns(Task.CompletedTask);
 
         _handler = new UpdateOrderStatusHandler(
+            _notificationServiceMock.Object,
             _inventoryRepositoryMock.Object,
             _orderRepositoryMock.Object,
             _currentUserServiceMock.Object,
@@ -52,16 +59,24 @@ public class UpdateOrderStatusHandlerTests
             CancellationToken.None);
 
         Assert.True(result);
-        Assert.Equal(OrderStatus.Confirmed, order.Status);
-        Assert.True(order.UpdatedAt > DateTime.UtcNow.AddMinutes(-1));
+        _orderRepositoryMock.Verify(
+            r => r.TryUpdateStatusAsync(order.Id, OrderStatus.Pending, OrderStatus.Confirmed, It.IsAny<CancellationToken>()),
+            Times.Once);
+        _orderRepositoryMock.Verify(
+            r => r.AddStatusHistory(It.Is<OrderStatusHistory>(h =>
+                h.OrderId == order.Id &&
+                h.PreviousStatus == OrderStatus.Pending &&
+                h.NewStatus == OrderStatus.Confirmed &&
+                h.ChangedBy == userId)),
+            Times.Once);
+        _notificationServiceMock.Verify(
+            n => n.NotifyOrderStatusChangedAsync(order.UserId, order.Id, "Confirmed"),
+            Times.Once);
         _inventoryRepositoryMock.Verify(
             r => r.CommitReservedStockAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
             Times.Never);
         _unitOfWorkMock.Verify(
             u => u.SaveChangesAsync(It.IsAny<CancellationToken>()),
-            Times.Once);
-        _unitOfWorkMock.Verify(
-            u => u.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -89,7 +104,6 @@ public class UpdateOrderStatusHandlerTests
             CancellationToken.None);
 
         Assert.True(result);
-        Assert.Equal(OrderStatus.Delivered, order.Status);
         foreach (var item in order.Items)
         {
             _inventoryRepositoryMock.Verify(
@@ -99,9 +113,9 @@ public class UpdateOrderStatusHandlerTests
         _unitOfWorkMock.Verify(
             u => u.ExecuteInTransactionAsync(It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()),
             Times.Once);
-        _unitOfWorkMock.Verify(
-            u => u.SaveChangesAsync(It.IsAny<CancellationToken>()),
-            Times.Never);
+        _notificationServiceMock.Verify(
+            n => n.NotifyOrderStatusChangedAsync(order.UserId, order.Id, "Delivered"),
+            Times.Once);
     }
 
     [Fact]
@@ -112,6 +126,9 @@ public class UpdateOrderStatusHandlerTests
 
         _orderRepositoryMock.Verify(
             r => r.GetOrderForStatusUpdateAsync(It.IsAny<Guid>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _notificationServiceMock.Verify(
+            n => n.NotifyOrderStatusChangedAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()),
             Times.Never);
     }
 
@@ -124,6 +141,10 @@ public class UpdateOrderStatusHandlerTests
 
         await Assert.ThrowsAsync<KeyNotFoundException>(
             () => _handler.Handle(new UpdateOrderStatusCommand(Guid.NewGuid(), OrderStatus.Confirmed), CancellationToken.None));
+
+        _notificationServiceMock.Verify(
+            n => n.NotifyOrderStatusChangedAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()),
+            Times.Never);
     }
 
     [Fact]
@@ -139,7 +160,12 @@ public class UpdateOrderStatusHandlerTests
         await Assert.ThrowsAsync<UnauthorizedAccessException>(
             () => _handler.Handle(new UpdateOrderStatusCommand(order.Id, OrderStatus.Confirmed), CancellationToken.None));
 
-        Assert.Equal(OrderStatus.Pending, order.Status);
+        _orderRepositoryMock.Verify(
+            r => r.TryUpdateStatusAsync(It.IsAny<Guid>(), It.IsAny<OrderStatus>(), It.IsAny<OrderStatus>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _notificationServiceMock.Verify(
+            n => n.NotifyOrderStatusChangedAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()),
+            Times.Never);
     }
 
     [Theory]
@@ -160,7 +186,12 @@ public class UpdateOrderStatusHandlerTests
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => _handler.Handle(new UpdateOrderStatusCommand(order.Id, next), CancellationToken.None));
 
-        Assert.Equal(current, order.Status);
+        _orderRepositoryMock.Verify(
+            r => r.TryUpdateStatusAsync(It.IsAny<Guid>(), It.IsAny<OrderStatus>(), It.IsAny<OrderStatus>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _notificationServiceMock.Verify(
+            n => n.NotifyOrderStatusChangedAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()),
+            Times.Never);
     }
 
     [Fact]
@@ -184,7 +215,12 @@ public class UpdateOrderStatusHandlerTests
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => _handler.Handle(new UpdateOrderStatusCommand(order.Id, OrderStatus.Delivered), CancellationToken.None));
 
-        Assert.Equal(OrderStatus.OutForDelivery, order.Status);
+        _orderRepositoryMock.Verify(
+            r => r.AddStatusHistory(It.IsAny<OrderStatusHistory>()),
+            Times.Never);
+        _notificationServiceMock.Verify(
+            n => n.NotifyOrderStatusChangedAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()),
+            Times.Never);
     }
 
     [Theory]
@@ -203,9 +239,11 @@ public class UpdateOrderStatusHandlerTests
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => _handler.Handle(new UpdateOrderStatusCommand(order.Id, OrderStatus.Confirmed), CancellationToken.None));
 
-        Assert.Equal(current, order.Status);
         _inventoryRepositoryMock.Verify(
             r => r.CommitReservedStockAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+        _notificationServiceMock.Verify(
+            n => n.NotifyOrderStatusChangedAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()),
             Times.Never);
         _unitOfWorkMock.Verify(
             u => u.SaveChangesAsync(It.IsAny<CancellationToken>()),
@@ -213,7 +251,7 @@ public class UpdateOrderStatusHandlerTests
     }
 
     [Fact]
-    public async Task Handle_ShouldThrow_WhenCancellationIsRequestedThroughStatusUpdate()
+    public async Task Handle_ShouldThrow_WhenStatusWasChangedConcurrently()
     {
         var userId = Guid.NewGuid();
         var order = CreateOrder(userId, OrderStatus.Pending);
@@ -222,22 +260,25 @@ public class UpdateOrderStatusHandlerTests
         _orderRepositoryMock
             .Setup(r => r.GetOrderForStatusUpdateAsync(order.Id, It.IsAny<CancellationToken>()))
             .ReturnsAsync(order);
+        _orderRepositoryMock
+            .Setup(r => r.TryUpdateStatusAsync(It.IsAny<Guid>(), It.IsAny<OrderStatus>(), It.IsAny<OrderStatus>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(false);
 
         await Assert.ThrowsAsync<InvalidOperationException>(
-            () => _handler.Handle(new UpdateOrderStatusCommand(order.Id, OrderStatus.Cancelled), CancellationToken.None));
+            () => _handler.Handle(new UpdateOrderStatusCommand(order.Id, OrderStatus.Confirmed), CancellationToken.None));
 
-        Assert.Equal(OrderStatus.Pending, order.Status);
-        _inventoryRepositoryMock.Verify(
-            r => r.ReleaseReservedStockAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<int>(), It.IsAny<CancellationToken>()),
+        _orderRepositoryMock.Verify(
+            r => r.AddStatusHistory(It.IsAny<OrderStatusHistory>()),
             Times.Never);
-        _unitOfWorkMock.Verify(
-            u => u.SaveChangesAsync(It.IsAny<CancellationToken>()),
+        _notificationServiceMock.Verify(
+            n => n.NotifyOrderStatusChangedAsync(It.IsAny<Guid>(), It.IsAny<Guid>(), It.IsAny<string>()),
             Times.Never);
     }
 
     private static Order CreateOrder(Guid businessOwnerId, OrderStatus status) => new()
     {
         Id = Guid.NewGuid(),
+        UserId = Guid.NewGuid(),
         BranchId = Guid.NewGuid(),
         Status = status,
         UpdatedAt = DateTime.UtcNow.AddHours(-1),
